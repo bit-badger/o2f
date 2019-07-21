@@ -1,4 +1,4 @@
-# objects () |> functions
+# objects |> functions
 
 ## What
 
@@ -28,4 +28,4 @@ _This is not his primary occupation, so the pace may be slow; ideally, the resul
 
 ## The Steps
 
-The plan is laid out, and will be documented as we go along, on the project site (future URL: objects-to-functions.bitbadger.solutions).
+The plan is laid out, and will be documented as we go along, on the [project site](http://objects-to-functions.bitbadger.solutions).
