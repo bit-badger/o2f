@@ -5,6 +5,9 @@ Welcome to `objects |> functions` (pronounced "objects to functions"), a journey
 **[Intro](intro.html)**
 What in the world is this anyway?
 
+**[Step 0](step0.html)** - Set Up the Environment
+Make sure we have all the tools we'll need along the way
+
 **Step 1** - Hello World  
 Establish a web request response with the least possible / complex code
 

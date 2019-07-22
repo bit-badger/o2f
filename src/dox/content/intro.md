@@ -22,7 +22,7 @@ As we move forward, we will be developing the same application 5 different ways.
 
 Or, in table form:
 
-<table>
+<table style="width:75%;">
   <tr>
     <th>&nbsp;</th>
     <th>Uno</th>
@@ -72,3 +72,6 @@ Or, in table form:
     <td>RavenDB</td>
   </tr>
 </table>
+
+---
+[Back](./)

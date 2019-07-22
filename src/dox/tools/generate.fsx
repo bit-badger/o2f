@@ -4,7 +4,7 @@
 // --------------------------------------------------------------------------------------
 
 // Web site location for the generated documentation
-let website = "/"
+let website = ""
 
 let githubLink = "https://github.com/bit-badger/o2f"
 
@@ -23,32 +23,34 @@ let info =
 #load "../../packages/FSharp.Formatting/FSharp.Formatting.fsx"
 #I "../../packages/FAKE/tools/"
 #r "FakeLib.dll"
-open Fake
-open System.IO
+open Fake.Core
+open Fake.IO
+open Fake.IO.FileSystemOperators
 open FSharp.Formatting.Razor
+open System.IO
+
+// Paths with template/source/output locations
+let content     = __SOURCE_DIRECTORY__ @@ "../content"
+let output      = __SOURCE_DIRECTORY__ @@ "../../../docs"
+let files       = __SOURCE_DIRECTORY__ @@ "../files"
+let templates   = __SOURCE_DIRECTORY__ @@ "templates"
+let formatting  = __SOURCE_DIRECTORY__ @@ "../../packages/FSharp.Formatting/"
+let docTemplate = "docpage.cshtml"
 
 // When called from 'build.fsx', use the public project URL as <root>
 // otherwise, use the current 'output' directory.
 #if RELEASE
 let root = website
 #else
-let root = "file://" + (__SOURCE_DIRECTORY__ @@ "../output")
+let root = "file://" + output
 #endif
 
-// Paths with template/source/output locations
-let bin        = __SOURCE_DIRECTORY__ @@ "../../bin"
-let content    = __SOURCE_DIRECTORY__ @@ "../content"
-let output     = __SOURCE_DIRECTORY__ @@ "../output"
-let files      = __SOURCE_DIRECTORY__ @@ "../files"
-let templates  = __SOURCE_DIRECTORY__ @@ "templates"
-let formatting = __SOURCE_DIRECTORY__ @@ "../../packages/FSharp.Formatting/"
-let docTemplate = "docpage.cshtml"
 
 // Where to look for *.csproj templates (in this order)
-let layoutRootsAll = System.Collections.Generic.Dictionary<string, string list>()
+let layoutRootsAll = System.Collections.Generic.Dictionary<string, string list> ()
 layoutRootsAll.Add ("en",[ templates; formatting @@ "templates"; formatting @@ "templates/reference" ])
-subDirectories (directoryInfo templates)
-|> Seq.iter (fun d ->
+DirectoryInfo.getSubDirectories (DirectoryInfo.ofPath templates)
+|> Array.iter (fun d ->
     match d.Name.Length with
     | 2 | 3 ->
       layoutRootsAll.Add (
@@ -56,13 +58,22 @@ subDirectories (directoryInfo templates)
         [templates @@ d.Name; formatting @@ "templates"; formatting @@ "templates/reference" ])
     | _ -> ())
 
+// Clean the previous output
+let cleanOutput () =
+  let deleteDir (dir : DirectoryInfo) = Directory.Delete (dir.FullName, true)
+  let deleteFile (file : FileInfo) = file.Delete ()
+  let out = DirectoryInfo.ofPath output
+  DirectoryInfo.getSubDirectories out
+  |> Array.iter deleteDir
+  out.GetFiles "*.html" |> Array.iter deleteFile
+
 // Copy static files and CSS + JS from F# Formatting
 let copyFiles () =
-  CopyRecursive files output true
-  |> Log "Copying file: "
-  ensureDirectory (output @@ "content")
-  CopyRecursive (formatting @@ "styles") (output @@ "content") true 
-  |> Log "Copying styles and scripts: "
+  Shell.copyRecursive files output true
+  |> Trace.logItems "Copying file: "
+  Directory.ensure (output @@ "content")
+  Shell.copyRecursive (formatting @@ "styles") (output @@ "content") true 
+  |> Trace.logItems "Copying styles and scripts: "
 
 // Build documentation from `fsx` and `md` files in `docs/content`
 let buildDocumentation () =
@@ -94,5 +105,8 @@ let buildDocumentation () =
         generateAnchors = true )
 
 // Generate
-copyFiles()
-buildDocumentation()
+#if RELEASE || CLEAN
+cleanOutput ()
+#endif
+copyFiles ()
+buildDocumentation ()

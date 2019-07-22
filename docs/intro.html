@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>intro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="A working example to demonstrate to C# developers how F# can improve their workflow and performance"/>
+    <meta name="author" content="Daniel J. Summers"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+
+    <link type="text/css" rel="stylesheet" href="/content/style.css" />
+    <script type="text/javascript" src="/content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="https://github.com/bit-badger/o2f">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="/index.html">objects |> functions</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h2><a name="objects-gt-functions-Introduction" class="anchor" href="#objects-gt-functions-Introduction">objects |&gt; functions Introduction</a></h2>
+<h3><a name="Background" class="anchor" href="#Background">Background</a></h3>
+<p>A skilled C# developer can write some pretty incredible software. It is a rich language that has many of the features of other object-oriented (OO) languages, without many of the pain points that those other languages seem to have. The .NET family of frameworks have an expansive set of library functions that allow developers to quickly get their ideas from concept to executable code.</p>
+<p>Within the OO world, there are some downsides. All but the smallest of types are implemented as reference types; and, to the chagrin of many a developer, references can be null (and likely will, at the most inconvenient time). All OO languages provide a way to check if the instance is pointing to a null reference, though, so there is a way around that - but you have to write code for it every time you want to check. Objects are also usually mutable; the general flow is to write <code>var x = new MyObject();</code>, and then set its properties as <code>x.MyProp = "abc";</code>. Combine this mutability with reference passing, though, and you have the perfect recipe for strange behavior and unexpected side effects.</p>
+<p>C# has begun embracing some functional programming concepts; <a href="https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/introduction-to-linq-queries">LINQ</a> and its anonymous lambda functions that it converts to expressions are a good example. If you've ever written <code>from foo in foos where foo.Count &gt; 7 select foo.Name</code>, or <code>foos.Where(foo =&gt; foo.Count &gt; 7).Select(foo =&gt; foo.Name)</code>, you've written a filter/map function chain (possibly without realizing it). <a href="https://docs.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-7">C# 7</a> even brought a new syntax for defining a function local to a method, which allows for structuring code in functions more succinctly.</p>
+<p>The developers of F# looked at the problems that OO had, and noticed that these were problems that functional languages did not have. Some of the concepts were similar, but there were fewer pitfalls. For example, Haskell has a <code>Maybe</code> monad <em>(for now, think of "monad" as a type pattern)</em> that is used when a value may or may not be present; values can't be null, because if they can be missing, they're wrapped in a <code>Maybe</code>. They also saw mutability as not only a source of latent bugs, but as an impediment to distributed and parallel processing. If a process flow relies on state that is mutated as the object moves through the process, it must be done linearally. The downside of these "other" functional languages, though, is that they don't run under .NET, so they could not take advantage of this large repository of reusable code.</p>
+<p>The F# developers looked to remedy that, bringing a Mathematics Language (ML)-style programming language to the .NET environment. F#-specific types are non-nullable by default, and variables must be explicitly made mutable. It provides collection types, and operators on those types, that enable set processing and expression-based program flows. Additionally, as a first-class member of the .NET family, it has OO syntax as well, and can interoperate smoothly with the majority of the concepts within .NET, including generics and task-based asynchronous processing.</p>
+<h3><a name="Our-Mission" class="anchor" href="#Our-Mission">Our Mission</a></h3>
+<p>At this point, I doubt that you are convinced of F#'s superiority in the software space. I do hope that you're intrigued, though, and will follow along this journey as we look at how to go from object-oriented thinking to functional thinking.</p>
+<p>As we move forward, we will be developing the same application 5 different ways. We will be building a rudimentary multi-site blogging platform from scratch. We will use libraries, but we are not going to install large frameworks, with the possible exception of the ASP.NET Core based solutions in later steps. All the applications will target .NET Core.</p>
+<p><strong>Uno</strong> will be written in C# and use <a href="https://docs.microsoft.com/en-us/aspnet/core/?view=aspnetcore-2.2">ASP.NET Core</a> MVC as its framework, along with Razor views. This is Microsoft's flagship product in the .NET web space, so it's a good place to start. <strong>Dos</strong> will also be written in C#, but use <a href="http://nancyfx.org/">Nancy</a>, a lightweight MVC framework; Nancy includes the Super Simple View Engine, which we'll use in this project. <strong>Tres</strong> will be <strong>Dos</strong> converted to F# (with a few changes), showing off the hybrid OO/functional nature of F#. <strong>Quatro</strong> will be written in F# and use <a href="https://github.com/giraffe-fsharp/Giraffe">Giraffe</a>, a project that enables functional development of an ASP.NET Core application. It also provides the Giraffe View Engine, which we will utilize. Finally, <strong>Cinco</strong> will be written in F# and use <a href="https://freya.io/">Freya</a>, a composable, functional framework. We will use the Giraffe views from <strong>Quatro</strong> for this project.</p>
+<p>Or, in table form:</p>
+<table style="width:75%;">
+  <tr>
+    <th>&nbsp;</th>
+    <th>Uno</th>
+    <th>Dos</th>
+    <th>Tres</th>
+    <th>Quatro</th>
+    <th>Cinco</th>
+  </tr>
+  <tr>
+    <th>Language</th>
+    <td>C#</td>
+    <td>C#</td>
+    <td>F#</td>
+    <td>F#</td>
+    <td>F#</td>
+  <tr>
+  <tr>
+    <th>Framework</th>
+    <td>ASP.NET Core</td>
+    <td>Nancy</td>
+    <td>Nancy</td>
+    <td>Giraffe</td>
+    <td>Freya</td>
+  </tr>
+  <tr>
+    <th>Views</th>
+    <td>Razor</td>
+    <td>SSVE</td>
+    <td>SSVE</td>
+    <td>Giraffe</td>
+    <td>Giraffe</td>
+  </tr>
+  <tr>
+    <th>Server</th>
+    <td>Kestrel</td>
+    <td>Kestrel</td>
+    <td>Kestrel</td>
+    <td>Kestrel</td>
+    <td>Kestrel</td>
+  </tr>
+  <tr>
+    <th>Database</th>
+    <td>RavenDB</td>
+    <td>RavenDB</td>
+    <td>RavenDB</td>
+    <td>RavenDB</td>
+    <td>RavenDB</td>
+  </tr>
+</table>
+<hr />
+<p><a href="./">Back</a></p>
+
+
+        </div>
+        <div class="span3">
+          <img src="/img/logo.png" alt="F# Project" style="width:150px;margin:10px" />  
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">objects |> functions</li>
+            <li><a href="/index.html">Home page</a></li>
+            <li class="divider"></li>
+            
+            <li><a href="https://github.com/bit-badger/o2f">Source Code on GitHub</a></li>
+            <li><a href="/license.html">License</a></li>
+            
+            
+            <li class="nav-header">Steps</li>
+            <li><a href="/step0.html"><strong>0 |> Environment</strong></a></li>
+            
+
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="https://github.com/bit-badger/o2f"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+  </body>
+  </html>
