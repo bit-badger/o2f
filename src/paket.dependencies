@@ -2,3 +2,5 @@ source https://www.nuget.org/api/v2
 
 nuget FAKE
 nuget FSharp.Formatting
+nuget Microsoft.AspNetCore.Owin
+nuget Microsoft.AspNetCore.Server.Kestrel

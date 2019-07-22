@@ -60,12 +60,11 @@ DirectoryInfo.getSubDirectories (DirectoryInfo.ofPath templates)
 
 // Clean the previous output
 let cleanOutput () =
-  let deleteDir (dir : DirectoryInfo) = Directory.Delete (dir.FullName, true)
-  let deleteFile (file : FileInfo) = file.Delete ()
+  let deleteDir  (dir : DirectoryInfo) = Directory.Delete (dir.FullName, true)
+  let deleteFile (file : FileInfo)     = file.Delete ()
   let out = DirectoryInfo.ofPath output
-  DirectoryInfo.getSubDirectories out
-  |> Array.iter deleteDir
-  out.GetFiles "*.html" |> Array.iter deleteFile
+  DirectoryInfo.getSubDirectories out |> Array.iter deleteDir
+  out.GetFiles "*.html"               |> Array.iter deleteFile
 
 // Copy static files and CSS + JS from F# Formatting
 let copyFiles () =
