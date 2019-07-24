@@ -22,10 +22,10 @@ Then, run `paket install` to pull in the new dependency and make the necessary m
 Nancy strives to provide a Super-Duper-Happy-Path (SDHP), where all you have to do is follow their conventions, and everything will "just work." (You can also configure every aspect of it; it's only opinionated in its defaults.) One of these conventions is that the controllers inherit from `NancyModule`, and when they do, no further configuration is required. So, we create the `Modules` directory, and add `HomeModule.cs`, which looks like this:
 
     [lang=csharp]
+    using Nancy;
+
     namespace Dos.Modules
     {
-        using Nancy;
-    
         public class HomeModule : NancyModule
         {
             public HomeModule() : base()

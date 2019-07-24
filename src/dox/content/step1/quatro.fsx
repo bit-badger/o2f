@@ -13,7 +13,7 @@
 Having [already made the leap to F#](./tres.html), we will now take a look at Giraffe. It was created by Dustin Moris
 Gorski as a [Suave](https://suave.io)-like functional abstraction over ASP.NET Core. It allows composable functions and
 expressive configuration, while then delegating the work to the same libraries that C# applications use. Make sure the
-projet file name is `Quatro.fsproj`, and ensure the top looks like the other projects:
+project file name is `Quatro.fsproj`, and ensure the top looks like the other projects:
   
     [lang=xml]
     <PropertyGroup>
@@ -24,9 +24,8 @@ projet file name is `Quatro.fsproj`, and ensure the top looks like the other pro
       <RootNamespace>Quatro</RootNamespace>
     </PropertyGroup>
 
-To be able to develop this project, we need to add Giraffe to `paket.dependencies`. Giraffe's dependencies are a bit
-different than others, and but the format should be familiar by now; we'll create `paket.references` with the following
-packages:
+To be able to develop this project, we need to add Giraffe to `paket.dependencies`. Create `paket.references` with the
+following packages:
 
     Giraffe
     Microsoft.AspNetCore.Hosting
@@ -67,21 +66,21 @@ and an `HttpContext option` as its return value. The `HttpContext` as the parame
 initial function, and its `HttpContext option` will be returned as the call's output. It seems convoluted, but think of
 the first function (the part in parenthesis) as a process definition, and the middle `HttpContext` as the execution
 parameter that kicks the process off. You can have as many processes defined as you want, and you can chain them
-together; once you have an actual context, you can run it through this process chain.
+together; once a request generates an actual context, it is run through this process chain.
 
 The `option` part is new. In the [intro](../intro.html), I mentioned Haskell's `Maybe` monad; this is F#'s version of
 that pattern. `option`s can be `Some` or `None`, indicating whether the value is present or not. We'll dig into them
 more the further along we get, but for now, we'll just see how Giraffe uses this. If the `HttpHandler` returns `Some`,
-procesing continues. (The `Some` that it returns is attached to the same `HttpContext`, which may have been modified by
-the handler.) If the `HttpHandler` returns `None`, it means that the handler could not do anything with the request,
-and that Giraffe will not handle it. Giraffe provides a composition operator `>=>` that allows us to compose
-`HttpHandler`s together, and handles feeding the output from one into the input of the next one.
+procesing continues. (The value of the `Some` it returns is the same `HttpContext`, which may have been modified by the
+handler.) If the `HttpHandler` returns `None`, it means the handler could not do anything with the request, and Giraffe
+will not handle it. Giraffe provides a composition operator `>=>` that allows us to compose `HttpHandler`s together,
+and handles feeding the output from one into the input of the next one.
 
-All that being said... Giraffe includes some built-in handlers for common tasks, and returning HTML is one of the.
-Here's our handler function...
+With all that - Giraffe includes some built-in handlers for common tasks, and returning text is one of them. Here's our
+handler function...
 
     [lang=fsharp]
-    htmlString "Hello World from Giraffe"
+    text "Hello World from Giraffe"
 
 ...but we're not going to write it just yet. To this point, we've used a `Startup` class to configure our environment.
 Creating a "magic" class to do our configuration isn't really the functional way, though; for this version, we'll
@@ -98,7 +97,7 @@ open Microsoft.AspNetCore.Hosting
 [<RequireQualifiedAccess>]
 module Configure =
   let app (app : IApplicationBuilder) =
-    app.UseGiraffe (htmlString "Hello World from Giraffe")
+    app.UseGiraffe (text "Hello World from Giraffe")
     
 module App =
   [<EntryPoint>]
@@ -125,5 +124,6 @@ conflicting overloads which the compiler can't resolve, but I don't know that fo
 
 `dotnet run` should succeed at this point, and localhost:5000 should display our Hello World message.
 
+---
 [Back to Step 1](../step1)
 *)

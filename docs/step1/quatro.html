@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>quatro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="A working example to demonstrate to C# developers how F# can improve their workflow and performance"/>
+    <meta name="author" content="Daniel J. Summers"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+
+    <link type="text/css" rel="stylesheet" href="/content/style.css" />
+    <script type="text/javascript" src="/content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="https://github.com/bit-badger/o2f">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="/index.html">objects |> functions</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h3><a name="Quatro-Step-1" class="anchor" href="#Quatro-Step-1">Quatro - Step 1</a></h3>
+<p>Having <a href="./tres.html">already made the leap to F#</a>, we will now take a look at Giraffe. It was created by Dustin Moris
+Gorski as a <a href="https://suave.io">Suave</a>-like functional abstraction over ASP.NET Core. It allows composable functions and
+expressive configuration, while then delegating the work to the same libraries that C# applications use. Make sure the
+project file name is <code>Quatro.fsproj</code>, and ensure the top looks like the other projects:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="xml"><span class="k">&lt;</span><span class="i">PropertyGroup</span><span class="k">&gt;</span>
+  <span class="k">&lt;</span><span class="i">AssemblyName</span><span class="k">&gt;</span>Quatro<span class="k">&lt;/</span><span class="i">AssemblyName</span><span class="k">&gt;</span>
+  <span class="k">&lt;</span><span class="i">VersionPrefix</span><span class="k">&gt;</span>2.0.0<span class="k">&lt;/</span><span class="i">VersionPrefix</span><span class="k">&gt;</span>
+  <span class="k">&lt;</span><span class="i">OutputType</span><span class="k">&gt;</span>Exe<span class="k">&lt;/</span><span class="i">OutputType</span><span class="k">&gt;</span>
+  <span class="k">&lt;</span><span class="i">TargetFramework</span><span class="k">&gt;</span>netcoreapp2.2<span class="k">&lt;/</span><span class="i">TargetFramework</span><span class="k">&gt;</span>
+  <span class="k">&lt;</span><span class="i">RootNamespace</span><span class="k">&gt;</span>Quatro<span class="k">&lt;/</span><span class="i">RootNamespace</span><span class="k">&gt;</span>
+<span class="k">&lt;/</span><span class="i">PropertyGroup</span><span class="k">&gt;</span>
+</code></pre></td></tr></table>
+<p>To be able to develop this project, we need to add Giraffe to <code>paket.dependencies</code>. Create <code>paket.references</code> with the
+following packages:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="id">Giraffe</span>
+<span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="id">Microsoft</span><span class="pn">.</span><span class="id">AspNetCore</span><span class="pn">.</span><span class="id">Hosting</span>
+<span onmouseout="hideTip(event, 'fs1', 2)" onmouseover="showTip(event, 'fs1', 2)" class="id">Microsoft</span><span class="pn">.</span><span class="id">AspNetCore</span><span class="pn">.</span><span class="id">Server</span><span class="pn">.</span><span class="id">Kestrel</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Run <code>paket install</code> to download Giraffe and its dependencies <em>(which will be many more than we've seen with previous
+dependencies, as Giraffe depends on the the entire ASP.NET Core framework, not just the parts that <strong>Uno</strong> required)</em>,
+and let it fix up <code>Quatro.fsproj</code>. We'll also go ahead and rename <code>Program.fs</code> to <code>App.fs</code> to remain consistent among
+the projects, and tell the compiler about it:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="text">&lt;ItemGroup&gt;
+  &lt;Compile Include="App.fs" /&gt;
+&lt;/ItemGroup&gt;
+</code></pre></td></tr></table>
+<p>Giraffe uses the concept of a
+<a href="https://github.com/giraffe-fsharp/Giraffe/blob/master/DOCUMENTATION.md#httphandler">handler function</a> to compose web
+applications. Take a look at that text under that heading, because, in F#, the types are your guide. With types defined
+clearly, it can be easy to figure out how the composition should happen. Think of it like Lego&reg; bricks; you know
+what blocks you can assemble based on the shape of the bricks and their edges.</p>
+<p>In F# notation, <code>-&gt;</code> describes parameters for a function that can be provided one at a time. Let's suppose we have a
+<code>repeat</code> function that takes a string and a number, and returns the string repeated that number of times; so,
+<code>repeat "abc" 3</code> would return <code>"abcabcabc"</code>. The type signature of this function is <code>string -&gt; int -&gt; string</code>. If we
+call it with just a string, ex. <code>let x = repeat "bob"</code>, <code>x</code> will have the type signature <code>int -&gt; string</code>. In effect, <code>x</code>
+is a function that, given an integer, will return that number of "bob"s. This concept is called currying, and can be
+helpful when you need to call a function many times with most of the parameters the same - that is, if the parameters
+you're changing are the ones at the end of the parameter list.</p>
+<p>With that being said, the signature for an <code>HttpHandler</code> is</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">(</span><span class="id">HttpContext</span> <span class="k">-&gt;</span> <span class="id">Task</span><span class="pn">&lt;</span><span class="id">HttpContext</span> <span onmouseout="hideTip(event, 'fs2', 3)" onmouseover="showTip(event, 'fs2', 3)" class="id">option</span><span class="pn">&gt;</span><span class="pn">)</span> <span class="k">-&gt;</span> <span class="id">HttpContext</span> <span class="k">-&gt;</span> <span class="id">Task</span><span class="pn">&lt;</span><span class="id">HttpContext</span> <span onmouseout="hideTip(event, 'fs2', 4)" onmouseover="showTip(event, 'fs2', 4)" class="id">option</span><span class="pn">&gt;</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Ignoring <code>Task</code> (after noting that this means it's using .NET's task-based asynchrony), what we have is a function
+definition that takes an <code>HttpContext</code> and returns an <code>HttpContext option</code>, which has an <code>HttpContext</code> as its parameter
+and an <code>HttpContext option</code> as its return value. The <code>HttpContext</code> as the parameter will be fed into the input of the
+initial function, and its <code>HttpContext option</code> will be returned as the call's output. It seems convoluted, but think of
+the first function (the part in parenthesis) as a process definition, and the middle <code>HttpContext</code> as the execution
+parameter that kicks the process off. You can have as many processes defined as you want, and you can chain them
+together; once a request generates an actual context, it is run through this process chain.</p>
+<p>The <code>option</code> part is new. In the <a href="../intro.html">intro</a>, I mentioned Haskell's <code>Maybe</code> monad; this is F#'s version of
+that pattern. <code>option</code>s can be <code>Some</code> or <code>None</code>, indicating whether the value is present or not. We'll dig into them
+more the further along we get, but for now, we'll just see how Giraffe uses this. If the <code>HttpHandler</code> returns <code>Some</code>,
+procesing continues. (The value of the <code>Some</code> it returns is the same <code>HttpContext</code>, which may have been modified by the
+handler.) If the <code>HttpHandler</code> returns <code>None</code>, it means the handler could not do anything with the request, and Giraffe
+will not handle it. Giraffe provides a composition operator <code>&gt;=&gt;</code> that allows us to compose <code>HttpHandler</code>s together,
+and handles feeding the output from one into the input of the next one.</p>
+<p>With all that - Giraffe includes some built-in handlers for common tasks, and returning text is one of them. Here's our
+handler function...</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="id">text</span> <span class="s">&quot;Hello World from Giraffe&quot;</span>
+</code></pre></td>
+</tr>
+</table>
+<p>...but we're not going to write it just yet. To this point, we've used a <code>Startup</code> class to configure our environment.
+Creating a "magic" class to do our configuration isn't really the functional way, though; for this version, we'll
+configure the web host builder with custom functions instead.</p>
+<p>This gives us the most terse single-file solution of the 5; here is <code>App.fs</code> in its entirety:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+<span class="l">21: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">namespace</span> <span class="id">Quatro</span>
+
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs3', 5)" onmouseover="showTip(event, 'fs3', 5)" class="id">Giraffe</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 6)" onmouseover="showTip(event, 'fs1', 6)" class="id">Microsoft</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs4', 7)" onmouseover="showTip(event, 'fs4', 7)" class="id">AspNetCore</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 8)" onmouseover="showTip(event, 'fs5', 8)" class="id">Builder</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 9)" onmouseover="showTip(event, 'fs1', 9)" class="id">Microsoft</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs4', 10)" onmouseover="showTip(event, 'fs4', 10)" class="id">AspNetCore</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs6', 11)" onmouseover="showTip(event, 'fs6', 11)" class="id">Hosting</span>
+
+<span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs7', 12)" onmouseover="showTip(event, 'fs7', 12)" class="rt">RequireQualifiedAccess</span><span class="pn">&gt;]</span>
+<span class="k">module</span> <span class="m">Configure</span> <span class="o">=</span>
+  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs8', 13)" onmouseover="showTip(event, 'fs8', 13)" class="fn">app</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs9', 14)" onmouseover="showTip(event, 'fs9', 14)" class="id">app</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs10', 15)" onmouseover="showTip(event, 'fs10', 15)" class="if">IApplicationBuilder</span><span class="pn">)</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs9', 16)" onmouseover="showTip(event, 'fs9', 16)" class="fn">app</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 17)" onmouseover="showTip(event, 'fs11', 17)" class="id">UseGiraffe</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs12', 18)" onmouseover="showTip(event, 'fs12', 18)" class="fn">text</span> <span class="s">&quot;Hello World from Giraffe&quot;</span><span class="pn">)</span>
+    
+<span class="k">module</span> <span onmouseout="hideTip(event, 'fs13', 19)" onmouseover="showTip(event, 'fs13', 19)" class="m">App</span> <span class="o">=</span>
+  <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs14', 20)" onmouseover="showTip(event, 'fs14', 20)" class="rt">EntryPoint</span><span class="pn">&gt;]</span>
+  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs15', 21)" onmouseover="showTip(event, 'fs15', 21)" class="fn">main</span> <span class="id">_</span> <span class="o">=</span>
+    <span class="k">use</span> <span onmouseout="hideTip(event, 'fs16', 22)" onmouseover="showTip(event, 'fs16', 22)" class="id">host</span> <span class="o">=</span>
+      <span onmouseout="hideTip(event, 'fs17', 23)" onmouseover="showTip(event, 'fs17', 23)" class="rt">WebHostBuilder</span><span class="pn">(</span><span class="pn">)</span>
+        <span class="pn">.</span><span class="id">UseKestrel</span><span class="pn">(</span><span class="pn">)</span>
+        <span class="pn">.</span><span onmouseout="hideTip(event, 'fs18', 24)" onmouseover="showTip(event, 'fs18', 24)" class="id">Configure</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs19', 25)" onmouseover="showTip(event, 'fs19', 25)" class="id">System</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 26)" onmouseover="showTip(event, 'fs20', 26)" class="id">Action</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs10', 27)" onmouseover="showTip(event, 'fs10', 27)" class="if">IApplicationBuilder</span><span class="pn">&gt;</span> <span onmouseout="hideTip(event, 'fs18', 28)" onmouseover="showTip(event, 'fs18', 28)" class="m">Configure</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 29)" onmouseover="showTip(event, 'fs8', 29)" class="id">app</span><span class="pn">)</span>
+        <span class="pn">.</span><span class="id">Build</span> <span class="pn">(</span><span class="pn">)</span>
+    <span onmouseout="hideTip(event, 'fs16', 30)" onmouseover="showTip(event, 'fs16', 30)" class="fn">host</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 31)" onmouseover="showTip(event, 'fs21', 31)" class="id">Run</span><span class="pn">(</span><span class="pn">)</span>
+    <span class="n">0</span>
+</code></pre></td>
+</tr>
+</table>
+<p>We use <code>RequireQualifiedAccess</code> for our <code>Configure</code> module to prevent its names from conflicting with others. For this
+step, it's probably overkill, but it will be helpful when we have more than one thing we are configuring. Notice the
+<code>app.UseGiraffe</code> call; it uses our handler inline. In the future, we'll wire in a router than handles many URLs, yet it
+still ends up as an <code>HttpHandler</code>.</p>
+<p>Also of note is that this implementation, though being in F#, has no <code>ignore</code> calls. <code>.UseGiraffe</code> is designed to be at
+the end of the configuration chain, so instead of returning the <code>IApplicationBuilder</code>, it returns nothing.</p>
+<p>Finally, the <code>System.Action</code> wrapping of our <code>Configure.app</code> function is, strangely, necessary. Usually, a function that
+returns unit <code>()</code> is recognized as a <code>void</code> function, but in this one particular case, it isn't. I suspect there may be
+conflicting overloads which the compiler can't resolve, but I don't know that for sure.</p>
+<p><code>dotnet run</code> should succeed at this point, and localhost:5000 should display our Hello World message.</p>
+<hr />
+<p><a href="../step1">Back to Step 1</a></p>
+
+<div class="tip" id="fs1">namespace Microsoft</div>
+<div class="tip" id="fs2">type &#39;T option = Option&lt;&#39;T&gt;</div>
+<div class="tip" id="fs3">namespace Giraffe</div>
+<div class="tip" id="fs4">namespace Microsoft.AspNetCore</div>
+<div class="tip" id="fs5">namespace Microsoft.AspNetCore.Builder</div>
+<div class="tip" id="fs6">namespace Microsoft.AspNetCore.Hosting</div>
+<div class="tip" id="fs7">Multiple items<br />type RequireQualifiedAccessAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; RequireQualifiedAccessAttribute<br /><br />--------------------<br />new : unit -&gt; RequireQualifiedAccessAttribute</div>
+<div class="tip" id="fs8">val app : app:IApplicationBuilder -&gt; unit</div>
+<div class="tip" id="fs9">val app : IApplicationBuilder</div>
+<div class="tip" id="fs10">type IApplicationBuilder =<br />&#160;&#160;member ApplicationServices : IServiceProvider with get, set<br />&#160;&#160;member Build : unit -&gt; RequestDelegate<br />&#160;&#160;member New : unit -&gt; IApplicationBuilder<br />&#160;&#160;member Properties : IDictionary&lt;string, obj&gt;<br />&#160;&#160;member ServerFeatures : IFeatureCollection<br />&#160;&#160;member Use : middleware:Func&lt;RequestDelegate, RequestDelegate&gt; -&gt; IApplicationBuilder</div>
+<div class="tip" id="fs11">member IApplicationBuilder.UseGiraffe : handler:HttpHandler -&gt; unit</div>
+<div class="tip" id="fs12">val text : str:string -&gt; HttpHandler</div>
+<div class="tip" id="fs13">module App<br /><br />from Quatro</div>
+<div class="tip" id="fs14">Multiple items<br />type EntryPointAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; EntryPointAttribute<br /><br />--------------------<br />new : unit -&gt; EntryPointAttribute</div>
+<div class="tip" id="fs15">val main : string [] -&gt; int</div>
+<div class="tip" id="fs16">val host : IWebHost</div>
+<div class="tip" id="fs17">Multiple items<br />type WebHostBuilder =<br />&#160;&#160;new : unit -&gt; WebHostBuilder<br />&#160;&#160;member Build : unit -&gt; IWebHost<br />&#160;&#160;member ConfigureAppConfiguration : configureDelegate:Action&lt;WebHostBuilderContext, IConfigurationBuilder&gt; -&gt; IWebHostBuilder<br />&#160;&#160;member ConfigureServices : configureServices:Action&lt;IServiceCollection&gt; -&gt; IWebHostBuilder + 1 overload<br />&#160;&#160;member GetSetting : key:string -&gt; string<br />&#160;&#160;member UseSetting : key:string * value:string -&gt; IWebHostBuilder<br /><br />--------------------<br />WebHostBuilder() : WebHostBuilder</div>
+<div class="tip" id="fs18">module Configure<br /><br />from Quatro</div>
+<div class="tip" id="fs19">namespace System</div>
+<div class="tip" id="fs20">Multiple items<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11,&#39;T12,&#39;T13,&#39;T14,&#39;T15,&#39;T16&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 * &#39;T12 * &#39;T13 * &#39;T14 * &#39;T15 * &#39;T16 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11,&#39;T12,&#39;T13,&#39;T14,&#39;T15&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 * &#39;T12 * &#39;T13 * &#39;T14 * &#39;T15 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11,&#39;T12,&#39;T13,&#39;T14&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 * &#39;T12 * &#39;T13 * &#39;T14 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11,&#39;T12,&#39;T13&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 * &#39;T12 * &#39;T13 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11,&#39;T12&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 * &#39;T12 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 -&gt; unit<br /><br />--------------------<br />type Action =<br />&#160;&#160;delegate of unit -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T&gt; =<br />&#160;&#160;delegate of &#39;T -&gt; unit</div>
+<div class="tip" id="fs21">(extension) IWebHost.Run() : unit</div>
+
+        </div>
+        <div class="span3">
+          <img src="/img/logo.png" alt="F# Project" style="width:150px;margin:10px" />  
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">objects |> functions</li>
+            <li><a href="/index.html">Home page</a></li>
+            <li class="divider"></li>
+            
+            <li><a href="https://github.com/bit-badger/o2f">Source Code on GitHub</a></li>
+            <li><a href="/license.html">License</a></li>
+            
+            
+            <li class="nav-header">Steps</li>
+            <li><a href="/step0.html"><strong>0 |> Environment</strong></a></li>
+            <li><a href="/step1/"><strong>1 |> Hello World</strong></a></li>
+            
+
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="https://github.com/bit-badger/o2f"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+  </body>
+  </html>

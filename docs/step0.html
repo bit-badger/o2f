@@ -56,6 +56,9 @@
 </tr>
 </table>
 <p>This should create a <code>paket.dependencies</code> file and a <code>paket-files</code> directory; this is where we'll leave them for now. If you are following along and committing your work to a source code repository, <code>paket-files</code> can be excluded from source control, but <code>paket.dependencies</code> needs to be tracked.</p>
+<blockquote>
+<p>NOTE: If you install it as a project-level tool, you'll need to run <code>.paket\paket [command]</code> from the <code>src</code> folder in places throughout the site where we say to run <code>paket [command]</code>; with the tool version, though, you can run <code>paket</code> anywhere from the <code>src</code> folder and below.</p>
+</blockquote>
 <h3><a name="Database" class="anchor" href="#Database">Database</a></h3>
 <p><a href="https://ravendb.net/">RavenDB</a> has downloads for each of the main operating systems on which .NET Core is supported. The .zip file can be extracted to a directory under your control, and <code>run.ps1</code> or <code>run.sh</code> runs the server in interactive mode. You'll only need to run the database server when you're running an application or looking at data through RavenDB Studio, their outstanding web front end.</p>
 <p>Running an extracted archive like this, the server will run for 7 days without a license. Under the "Pricing" tab on their site, they list the licenses that are available, including two that are free. Near the bottom of the page, you'll find the "Developer" license; this is completely acceptable for our uses in this project. Their staff will e-mail you a JSON blob that you can paste into the server, and it will recognize that it's licensed to a developer.</p>
@@ -77,6 +80,7 @@
             
             <li class="nav-header">Steps</li>
             <li><a href="/step0.html"><strong>0 |> Environment</strong></a></li>
+            <li><a href="/step1/"><strong>1 |> Hello World</strong></a></li>
             
 
             

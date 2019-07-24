@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>cinco</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="A working example to demonstrate to C# developers how F# can improve their workflow and performance"/>
+    <meta name="author" content="Daniel J. Summers"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+
+    <link type="text/css" rel="stylesheet" href="/content/style.css" />
+    <script type="text/javascript" src="/content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="https://github.com/bit-badger/o2f">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="/index.html">objects |> functions</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h3><a name="Cinco-Step-1" class="anchor" href="#Cinco-Step-1">Cinco - Step 1</a></h3>
+<p>Let's take a look at the final framework we'll implement, Freya. As we've done the previous 4 times, ensure our project
+is <code>Cinco.fsproj</code>, and ensure the top <code>PropertyGroup</code> element looks like this.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="xml"><span class="k">&lt;</span><span class="i">PropertyGroup</span><span class="k">&gt;</span>
+  <span class="k">&lt;</span><span class="i">AssemblyName</span><span class="k">&gt;</span>Cinco<span class="k">&lt;/</span><span class="i">AssemblyName</span><span class="k">&gt;</span>
+  <span class="k">&lt;</span><span class="i">VersionPrefix</span><span class="k">&gt;</span>2.0.0<span class="k">&lt;/</span><span class="i">VersionPrefix</span><span class="k">&gt;</span>
+  <span class="k">&lt;</span><span class="i">OutputType</span><span class="k">&gt;</span>Exe<span class="k">&lt;/</span><span class="i">OutputType</span><span class="k">&gt;</span>
+  <span class="k">&lt;</span><span class="i">TargetFramework</span><span class="k">&gt;</span>netcoreapp2.2<span class="k">&lt;/</span><span class="i">TargetFramework</span><span class="k">&gt;</span>
+  <span class="k">&lt;</span><span class="i">RootNamespace</span><span class="k">&gt;</span>Cinco<span class="k">&lt;/</span><span class="i">RootNamespace</span><span class="k">&gt;</span>
+<span class="k">&lt;/</span><span class="i">PropertyGroup</span><span class="k">&gt;</span>
+</code></pre></td></tr></table>
+<p>We'll also need to add Freya to <code>paket.dependencies</code>, then add a <code>paket.references</code> file with three entries:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="id">Freya</span>
+<span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="id">Microsoft</span><span class="pn">.</span><span class="id">AspNetCore</span><span class="pn">.</span><span class="id">Owin</span>
+<span onmouseout="hideTip(event, 'fs1', 2)" onmouseover="showTip(event, 'fs1', 2)" class="id">Microsoft</span><span class="pn">.</span><span class="id">AspNetCore</span><span class="pn">.</span><span class="id">Server</span><span class="pn">.</span><span class="id">Kestrel</span>
+</code></pre></td>
+</tr>
+</table>
+<p>And, we'll rename <code>Program.fs</code> to <code>App.fs</code> and tell the compiler about it:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="xml"><span class="k">&lt;</span><span class="i">ItemGroup</span><span class="k">&gt;</span>
+  <span class="k">&lt;</span><span class="i">Compile</span> <span class="o">Include</span><span class="k">="App.fs"</span> <span class="k">/&gt;</span>
+<span class="k">&lt;/</span><span class="i">ItemGroup</span><span class="k">&gt;</span>
+</code></pre></td></tr></table>
+<p>Now, let's actually write <code>App.fs</code>:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">namespace</span> <span class="id">Cinco</span>
+
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs2', 3)" onmouseover="showTip(event, 'fs2', 3)" class="id">Freya</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs3', 4)" onmouseover="showTip(event, 'fs3', 4)" class="id">Core</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs4', 5)" onmouseover="showTip(event, 'fs4', 5)" class="id">Freya</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs5', 6)" onmouseover="showTip(event, 'fs5', 6)" class="id">Machines</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs6', 7)" onmouseover="showTip(event, 'fs6', 7)" class="id">Http</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 8)" onmouseover="showTip(event, 'fs1', 8)" class="id">Microsoft</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs7', 9)" onmouseover="showTip(event, 'fs7', 9)" class="id">AspNetCore</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 10)" onmouseover="showTip(event, 'fs8', 10)" class="id">Builder</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 11)" onmouseover="showTip(event, 'fs1', 11)" class="id">Microsoft</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs7', 12)" onmouseover="showTip(event, 'fs7', 12)" class="id">AspNetCore</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 13)" onmouseover="showTip(event, 'fs9', 13)" class="id">Hosting</span>
+</code></pre></td>
+</tr>
+</table>
+<p><code>Freya.Core</code> makes the <code>OwinMidFunc</code> module visible; <code>Freya.Machines.Http</code> provides the <code>freyaMachine</code> computation
+expression and the <code>Represent</code> module, which allows us to define our request-response.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">module</span> <span class="m">WebApp</span> <span class="o">=</span>
+  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs10', 14)" onmouseover="showTip(event, 'fs10', 14)" class="id">hello</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs11', 15)" onmouseover="showTip(event, 'fs11', 15)" class="k">freyaMachine</span> <span class="pn">{</span>
+      <span onmouseout="hideTip(event, 'fs12', 16)" onmouseover="showTip(event, 'fs12', 16)" class="k">handleOk</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs13', 17)" onmouseover="showTip(event, 'fs13', 17)" class="m">Represent</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs14', 18)" onmouseover="showTip(event, 'fs14', 18)" class="id">text</span> <span class="s">&quot;Hello World from Freya&quot;</span><span class="pn">)</span>
+      <span class="pn">}</span>
+</code></pre></td>
+</tr>
+</table>
+<p>This code defines a machine which always returns our greeting in its OK response.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs15', 19)" onmouseover="showTip(event, 'fs15', 19)" class="rt">RequireQualifiedAccess</span><span class="pn">&gt;]</span>
+<span class="k">module</span> <span class="m">Configure</span> <span class="o">=</span>
+  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs16', 20)" onmouseover="showTip(event, 'fs16', 20)" class="fn">app</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs17', 21)" onmouseover="showTip(event, 'fs17', 21)" class="id">app</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs18', 22)" onmouseover="showTip(event, 'fs18', 22)" class="if">IApplicationBuilder</span><span class="pn">)</span> <span class="o">=</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs19', 23)" onmouseover="showTip(event, 'fs19', 23)" class="id">freyaOwin</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs20', 24)" onmouseover="showTip(event, 'fs20', 24)" class="m">OwinMidFunc</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs21', 25)" onmouseover="showTip(event, 'fs21', 25)" class="id">ofFreya</span> <span onmouseout="hideTip(event, 'fs22', 26)" onmouseover="showTip(event, 'fs22', 26)" class="m">WebApp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 27)" onmouseover="showTip(event, 'fs10', 27)" class="id">hello</span>
+    <span onmouseout="hideTip(event, 'fs17', 28)" onmouseover="showTip(event, 'fs17', 28)" class="fn">app</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs23', 29)" onmouseover="showTip(event, 'fs23', 29)" class="id">UseOwin</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs24', 30)" onmouseover="showTip(event, 'fs24', 30)" class="id">p</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs24', 31)" onmouseover="showTip(event, 'fs24', 31)" class="fn">p</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs25', 32)" onmouseover="showTip(event, 'fs25', 32)" class="id">Invoke</span> <span onmouseout="hideTip(event, 'fs19', 33)" onmouseover="showTip(event, 'fs19', 33)" class="id">freyaOwin</span><span class="pn">)</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs26', 34)" onmouseover="showTip(event, 'fs26', 34)" class="fn">ignore</span>
+  
+<span class="k">module</span> <span onmouseout="hideTip(event, 'fs27', 35)" onmouseover="showTip(event, 'fs27', 35)" class="m">App</span> <span class="o">=</span>
+  <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs28', 36)" onmouseover="showTip(event, 'fs28', 36)" class="rt">EntryPoint</span><span class="pn">&gt;]</span>
+  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs29', 37)" onmouseover="showTip(event, 'fs29', 37)" class="fn">main</span> <span class="id">_</span> <span class="o">=</span>
+    <span class="k">use</span> <span onmouseout="hideTip(event, 'fs30', 38)" onmouseover="showTip(event, 'fs30', 38)" class="id">host</span> <span class="o">=</span>
+      <span onmouseout="hideTip(event, 'fs31', 39)" onmouseover="showTip(event, 'fs31', 39)" class="rt">WebHostBuilder</span><span class="pn">(</span><span class="pn">)</span>
+        <span class="pn">.</span><span class="id">UseKestrel</span><span class="pn">(</span><span class="pn">)</span>
+        <span class="pn">.</span><span onmouseout="hideTip(event, 'fs32', 40)" onmouseover="showTip(event, 'fs32', 40)" class="id">Configure</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs33', 41)" onmouseover="showTip(event, 'fs33', 41)" class="id">System</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs34', 42)" onmouseover="showTip(event, 'fs34', 42)" class="id">Action</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs18', 43)" onmouseover="showTip(event, 'fs18', 43)" class="if">IApplicationBuilder</span><span class="pn">&gt;</span> <span onmouseout="hideTip(event, 'fs32', 44)" onmouseover="showTip(event, 'fs32', 44)" class="m">Configure</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs16', 45)" onmouseover="showTip(event, 'fs16', 45)" class="id">app</span><span class="pn">)</span>
+        <span class="pn">.</span><span class="id">Build</span><span class="pn">(</span><span class="pn">)</span>
+    <span onmouseout="hideTip(event, 'fs30', 46)" onmouseover="showTip(event, 'fs30', 46)" class="fn">host</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs35', 47)" onmouseover="showTip(event, 'fs35', 47)" class="id">Run</span><span class="pn">(</span><span class="pn">)</span>
+    <span class="n">0</span>
+</code></pre></td>
+</tr>
+</table>
+<p>The <code>Configure.app</code> function is similar to other OWIN pipeline configurations we've used, although Freya provides the
+<code>OwinMidFunc</code> module to convert a Freya function into an OWIN function. The <code>main</code> function is identical to the one we
+used in <strong>Quatro</strong>.</p>
+<p>You may be wondering why Freya is last, if we're going from less functional to more functional - especially with how
+terse <strong>Quatro</strong> ended up for this step. The answer is in the underlying implementation. Giraffe has a lot of defaults
+and convenience functions, including that <code>text</code> handler we used for our output; it then passes the results of these
+epxressions to ASP.NET Core for processing. Freya handles things completely differently; its <code>HttpMachine</code> starts out
+with nothing, and only requires processing for the code it handles. If you look at <code>WebApp.hello</code>, there is no logic in
+it to prevent an <code>200 OK</code> response; no redirection, no authorization checks, no rate limits, etc. It does not pass that
+information off to ASP.NET Core; it simply returns that value because nothing has prevented it.</p>
+<p>We will see machines that have more decisions than this one, and do more than just return text; when we do, you will
+see how each decision point is stated explicitly in that machine.</p>
+<p>To see the results, <code>dotnet run</code> and open localhost:5000 to observe our Hello World message.</p>
+<hr />
+<p><a href="../step1">Back to Step 1</a></p>
+
+<div class="tip" id="fs1">namespace Microsoft</div>
+<div class="tip" id="fs2">namespace Freya</div>
+<div class="tip" id="fs3">namespace Freya.Core</div>
+<div class="tip" id="fs4">Multiple items<br />module Freya<br /><br />from Freya.Core.Inference<br /><br />--------------------<br />module Freya<br /><br />from Freya.Core<br /><br />--------------------<br />namespace Freya<br /><br />--------------------<br />type Freya&lt;&#39;a&gt; = State -&gt; Async&lt;FreyaResult&lt;&#39;a&gt;&gt;</div>
+<div class="tip" id="fs5">namespace Freya.Machines</div>
+<div class="tip" id="fs6">namespace Freya.Machines.Http</div>
+<div class="tip" id="fs7">namespace Microsoft.AspNetCore</div>
+<div class="tip" id="fs8">namespace Microsoft.AspNetCore.Builder</div>
+<div class="tip" id="fs9">namespace Microsoft.AspNetCore.Hosting</div>
+<div class="tip" id="fs10">val hello : HttpMachine</div>
+<div class="tip" id="fs11">val freyaMachine : HttpMachineBuilder</div>
+<div class="tip" id="fs12">custom operation: handleOk (&#39;a)<br /><br />Calls HttpMachineBuilder.HandleOk</div>
+<div class="tip" id="fs13">module Represent<br /><br />from Freya.Machines.Http</div>
+<div class="tip" id="fs14">val text : text:string -&gt; Representation</div>
+<div class="tip" id="fs15">Multiple items<br />type RequireQualifiedAccessAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; RequireQualifiedAccessAttribute<br /><br />--------------------<br />new : unit -&gt; RequireQualifiedAccessAttribute</div>
+<div class="tip" id="fs16">val app : app:IApplicationBuilder -&gt; unit</div>
+<div class="tip" id="fs17">val app : IApplicationBuilder</div>
+<div class="tip" id="fs18">type IApplicationBuilder =<br />&#160;&#160;member ApplicationServices : IServiceProvider with get, set<br />&#160;&#160;member Build : unit -&gt; RequestDelegate<br />&#160;&#160;member New : unit -&gt; IApplicationBuilder<br />&#160;&#160;member Properties : IDictionary&lt;string, obj&gt;<br />&#160;&#160;member ServerFeatures : IFeatureCollection<br />&#160;&#160;member Use : middleware:Func&lt;RequestDelegate, RequestDelegate&gt; -&gt; IApplicationBuilder</div>
+<div class="tip" id="fs19">val freyaOwin : OwinMidFunc</div>
+<div class="tip" id="fs20">Multiple items<br />module OwinMidFunc<br /><br />from Freya.Core<br /><br />--------------------<br />type OwinMidFunc = System.Func&lt;OwinAppFunc,OwinAppFunc&gt;</div>
+<div class="tip" id="fs21">val ofFreya : freya:&#39;a -&gt; OwinMidFunc (requires member Freya)</div>
+<div class="tip" id="fs22">module WebApp<br /><br />from Cinco</div>
+<div class="tip" id="fs23">(extension) IApplicationBuilder.UseOwin() : System.Action&lt;System.Func&lt;System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;,System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;&gt;&gt;<br />(extension) IApplicationBuilder.UseOwin(pipeline: System.Action&lt;System.Action&lt;System.Func&lt;System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;,System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;&gt;&gt;&gt;) : IApplicationBuilder</div>
+<div class="tip" id="fs24">val p : System.Action&lt;System.Func&lt;System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;,System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;&gt;&gt;</div>
+<div class="tip" id="fs25">System.Action.Invoke(obj: System.Func&lt;System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;,System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;&gt;) : unit</div>
+<div class="tip" id="fs26">val ignore : value:&#39;T -&gt; unit</div>
+<div class="tip" id="fs27">module App<br /><br />from Cinco</div>
+<div class="tip" id="fs28">Multiple items<br />type EntryPointAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; EntryPointAttribute<br /><br />--------------------<br />new : unit -&gt; EntryPointAttribute</div>
+<div class="tip" id="fs29">val main : string [] -&gt; int</div>
+<div class="tip" id="fs30">val host : IWebHost</div>
+<div class="tip" id="fs31">Multiple items<br />type WebHostBuilder =<br />&#160;&#160;new : unit -&gt; WebHostBuilder<br />&#160;&#160;member Build : unit -&gt; IWebHost<br />&#160;&#160;member ConfigureAppConfiguration : configureDelegate:Action&lt;WebHostBuilderContext, IConfigurationBuilder&gt; -&gt; IWebHostBuilder<br />&#160;&#160;member ConfigureServices : configureServices:Action&lt;IServiceCollection&gt; -&gt; IWebHostBuilder + 1 overload<br />&#160;&#160;member GetSetting : key:string -&gt; string<br />&#160;&#160;member UseSetting : key:string * value:string -&gt; IWebHostBuilder<br /><br />--------------------<br />WebHostBuilder() : WebHostBuilder</div>
+<div class="tip" id="fs32">module Configure<br /><br />from Cinco</div>
+<div class="tip" id="fs33">namespace System</div>
+<div class="tip" id="fs34">Multiple items<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11,&#39;T12,&#39;T13,&#39;T14,&#39;T15,&#39;T16&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 * &#39;T12 * &#39;T13 * &#39;T14 * &#39;T15 * &#39;T16 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11,&#39;T12,&#39;T13,&#39;T14,&#39;T15&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 * &#39;T12 * &#39;T13 * &#39;T14 * &#39;T15 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11,&#39;T12,&#39;T13,&#39;T14&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 * &#39;T12 * &#39;T13 * &#39;T14 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11,&#39;T12,&#39;T13&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 * &#39;T12 * &#39;T13 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11,&#39;T12&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 * &#39;T12 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 -&gt; unit<br /><br />--------------------<br />type Action =<br />&#160;&#160;delegate of unit -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T&gt; =<br />&#160;&#160;delegate of &#39;T -&gt; unit</div>
+<div class="tip" id="fs35">(extension) IWebHost.Run() : unit</div>
+
+        </div>
+        <div class="span3">
+          <img src="/img/logo.png" alt="F# Project" style="width:150px;margin:10px" />  
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">objects |> functions</li>
+            <li><a href="/index.html">Home page</a></li>
+            <li class="divider"></li>
+            
+            <li><a href="https://github.com/bit-badger/o2f">Source Code on GitHub</a></li>
+            <li><a href="/license.html">License</a></li>
+            
+            
+            <li class="nav-header">Steps</li>
+            <li><a href="/step0.html"><strong>0 |> Environment</strong></a></li>
+            <li><a href="/step1/"><strong>1 |> Hello World</strong></a></li>
+            
+
+            
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="https://github.com/bit-badger/o2f"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+  </body>
+  </html>
