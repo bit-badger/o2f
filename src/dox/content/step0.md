@@ -26,6 +26,8 @@ Then, create a `src` directory. Within that directory, execute
 
 This should create a `paket.dependencies` file and a `paket-files` directory; this is where we'll leave them for now. If you are following along and committing your work to a source code repository, `paket-files` can be excluded from source control, but `paket.dependencies` needs to be tracked.
 
+> NOTE: If you install it as a project-level tool, you'll need to run `.paket\paket [command]` from the `src` folder in places throughout the site where we say to run `paket [command]`; with the tool version, though, you can run `paket` anywhere from the `src` folder and below.
+
 ### Database
 
 [RavenDB](https://ravendb.net/) has downloads for each of the main operating systems on which .NET Core is supported. The .zip file can be extracted to a directory under your control, and `run.ps1` or `run.sh` runs the server in interactive mode. You'll only need to run the database server when you're running an application or looking at data through RavenDB Studio, their outstanding web front end.

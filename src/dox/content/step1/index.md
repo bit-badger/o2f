@@ -12,4 +12,4 @@ All projects were created using `dotnet new console -lang C#` (or `F#`).
 
 **Quatro** - [In Depth](quatro.html)
 
-**Cinco** - [InDepth](cinco.html)
+**Cinco** - [In Depth](cinco.html)
