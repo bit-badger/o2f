@@ -5,6 +5,7 @@ nuget Freya
 nuget FSharp.Core
 nuget FSharp.Formatting
 nuget Giraffe
+nuget MarkdownSharp
 nuget Microsoft.AspNetCore.Owin
 nuget Microsoft.AspNetCore.Server.Kestrel
 nuget Nancy
