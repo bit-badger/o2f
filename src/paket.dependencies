@@ -8,4 +8,8 @@ nuget Giraffe
 nuget MarkdownSharp
 nuget Microsoft.AspNetCore.Owin
 nuget Microsoft.AspNetCore.Server.Kestrel
+nuget Microsoft.Extensions.Configuration.FileExtensions
+nuget Microsoft.Extensions.Configuration.Json
+nuget Microsoft.Extensions.Options.ConfigurationExtensions
 nuget Nancy
+nuget RavenDb.Client

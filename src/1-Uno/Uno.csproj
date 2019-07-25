@@ -7,5 +7,10 @@
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <RootNamespace>Uno</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

@@ -8,4 +8,9 @@
     <RootNamespace>Dos</RootNamespace>
   </PropertyGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
+  <ItemGroup>
+    <None Update="data-config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

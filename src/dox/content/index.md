@@ -14,7 +14,7 @@ Establish a web request response with the least possible / complex code
 **[Step 2](step2/)** - Data Model<br>
 Create the persistent types we'll use for our application
 
-**Step 3** - RavenDB Connection and Indexes<br>
+**[Step 3](step3/)** - RavenDB Connection and Indexes<br>
 Configure and prepare a RavenDB connection for use in our application
 
 **Step 4** - Framework Setup<br>
