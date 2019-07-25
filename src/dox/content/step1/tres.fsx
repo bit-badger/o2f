@@ -12,7 +12,14 @@
 ### Tres - Step 1
 
 Here, we're making the leap to F#. Once we ensure that our project file is named `Tres.fsproj`, the contents of the file
-should be the same as they were for [Dos](./dos.html). F# projects are historically not split into directories, as
+should be the same as they were for [Dos](./dos.html), just with different namespaces. We'll also need to specify a
+dependency on F#'s core library, so we'll add the following to `paket.dependencies`:
+
+    nuget FSharp.Core
+    
+...and copy `paket.references` over from **Dos**. Once it's in our project, add an `FSharp.Core` line to it.
+
+This is a good time to talke about F# project structure. F# projects are historically not split into directories, as
 compilation order is significant, and having them in the same directory allows the tooling to ensure that the
 compilation order is preserved. With the structure of the `.fsproj` file, this is not necessarily a limitation (as you
 can edit the `.fsproj` file directly to specify subdirectory compilation order), but we'll follow it for our purposes

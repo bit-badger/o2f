@@ -3,3 +3,4 @@ MarkdownSharp
 Microsoft.AspNetCore.Owin
 Microsoft.AspNetCore.Server.Kestrel
 Nancy
+RavenDb.Client
