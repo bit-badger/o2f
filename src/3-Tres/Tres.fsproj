@@ -8,6 +8,7 @@
     <RootNamespace>Tres</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Domain.fs" />
     <Compile Include="HomeModule.fs" />
     <Compile Include="App.fs" />
   </ItemGroup>
