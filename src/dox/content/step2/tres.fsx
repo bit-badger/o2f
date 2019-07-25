@@ -132,12 +132,12 @@ though, we don't have to define getters and setters.
 
 F# requires record types to always have all fields defined. F# also provides a `with` statement (separate from the one
 in the code above) that allows us to create a new instance of a record type that has all the fields of our original
-ones, only replacing the ones we specify. So, in C#, while we can do something like
+ones, only replacing the ones we specify. So, in C#, while we can do something like...
 
     [lang=csharp]
     var pg = new Page { Title = "Untitled" };
 
-, leaving all the other fields in their otherwise-initialized state, F# will not allow us to do that.  This is where
+...leaving all the other fields in their otherwise-initialized state, F# will not allow us to do that.  This is where
 the `Empty` static property comes in; we can use this to create new pages, while ensuring that we have sensible
 defaults for all the other fields.  The equivalent to the above C# statement in F# would be
 *)
@@ -151,6 +151,7 @@ use `String.IsNullOrEmpty()` to check for both of those, but we'll see some adva
 we continue to develop this project.
 
 A few syntax notes:
+
 - The `CLIMutable` attribute instructs the compiler to generate a no-argument constructor for the underlying class. It
 is not something we will reference in our code, but when RavenDB tries to create instances of these types when we load
 them from the database, this will help it.

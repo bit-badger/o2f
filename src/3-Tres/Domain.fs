@@ -31,8 +31,6 @@ module CommentStatus =
   let Spam = "Spam"
 
 
-open MarkdownSharp
-
 type IArticleContent =
   abstract member ContentType : string with get
   abstract member Text : string with get, set
@@ -50,7 +48,7 @@ type MarkdownArticleContent () =
   interface IArticleContent with
     member __.ContentType = ContentType.Markdown
     member __.Text with get () = text and set v = text <- v
-    member __.Generate () = Markdown().Transform text
+    member __.Generate () = MarkdownSharp.Markdown().Transform text
 
 
 [<CLIMutable; NoComparison; NoEquality>]
