@@ -11,7 +11,7 @@ Make sure we have all the tools we'll need along the way
 **[Step 1](step1/)** - Hello World<br>
 Establish a web request response with the least possible / complex code
 
-**Step 2** - Data Model<br>
+**[Step 2](step2/)** - Data Model<br>
 Create the persistent types we'll use for our application
 
 **Step 3** - RavenDB Connection and Indexes<br>

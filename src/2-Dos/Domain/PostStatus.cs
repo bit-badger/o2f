@@ -1,4 +1,4 @@
-namespace Uno.Domain
+namespace Dos.Domain
 {
     public static class PostStatus
     {

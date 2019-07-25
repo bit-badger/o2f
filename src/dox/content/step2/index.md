@@ -31,6 +31,8 @@ Both Uno and Dos will use the same C# model. For Tres, we'll convert classes to 
 
 Our C# data model looks very much like one you'd see in an Entity Framework project. The major difference is that what would be the navigation properties; collections (ex. the `Revisions` collection in the `Page` and `Post`) are part of the type, rather than a `Revision` being its own entity, while parent navigation properties (ex. `WebLog` for entities that define a `WebLogId` property) do not exist. Even if you are unfamiliar with Entity Framework, you will likely easily see how this model could be represented in a relational database.
 
+Within the `src` directory, add `nuget MarkdownSharp` to `paket.dependencies`, and add `MarkdownSharp` to the `paket.references` file for each project. This is the library we'll use to generate HTML from Markdown article content.
+
 Some other design decisions:
 
 - We will use strings (created from `Guid`s) as our Ids for entities, and all of documents will have `Id` as the property _(this supports the convention RavenDB uses to identify document identifiers)_.
