@@ -1,9 +1,9 @@
-module Tres.Indexes
+module Quatro.Indexes
 
 open Raven.Client.Documents.Indexes
 open System.Collections.Generic
 
-type Categories_ByWebLogIdAndSlug () as this =
+ type Categories_ByWebLogIdAndSlug () as this =
   inherit AbstractJavaScriptIndexCreationTask ()
   do
     this.Maps <-

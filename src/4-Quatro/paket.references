@@ -2,3 +2,7 @@ Giraffe
 MarkdownSharp
 Microsoft.AspNetCore.Hosting
 Microsoft.AspNetCore.Server.Kestrel
+Microsoft.Extensions.Configuration.FileExtensions
+Microsoft.Extensions.Configuration.Json
+Microsoft.Extensions.Options.ConfigurationExtensions
+RavenDb.Client
