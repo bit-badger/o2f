@@ -12,7 +12,7 @@ namespace Dos.Data.Indexes
                            from tag in post.Tags
                            select new
                            {
-                               post.Id,
+                               post.WebLogId,
                                Tag = tag
                            };
         }

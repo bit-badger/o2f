@@ -90,8 +90,17 @@ does not have that feature, and as of this writing, index creation does not work
 construct (`{| Name: value; ... |}`). However, there is another way to create indexes, and we will still have them
 named, and can still create them easily on application startup.
 
-Instead of an `AbstractIndexCreationTask<'T>`, let's look at our example index from **Uno** converted to an
-`AbstractJavaScriptIndexCreationTask`:
+Instead of an `AbstractIndexCreationTask<'T>`, we can use at `AbstractJavaScriptIndexCreationTask` instead. This type
+allows the user to provide a JavaScript mapping function that will be used to generate the index. Even better, though,
+was something I stumbled across while trying to define RavenDB indexes in F#; you can also provide LINQ expressions.
+RavenDB Studio allows us to view index definitions, and in viewing the indexes from **Uno**, I saw that those
+definitions were text versions of the functional equivalent of our LINQ query (`xs.Select(x => new { .. })` instead of
+`from x in xs select new { ... }`). So, while RavenDB does provide a mechanism to describe indexes in JavaScript (and,
+if you are so inclined,
+[read up about it on their docs](https://ravendb.net/docs/article-page/4.2/csharp/indexes/javascript-indexes)), we will
+use it to specify the same indexes we've already designed.
+
+Here's a look at our example index, utilizing the `AbstractJavaScriptIndexCreationTask`:
 *)
 open Raven.Client.Documents.Indexes
 open System.Collections.Generic
@@ -101,18 +110,12 @@ type Categories_ByWebLogIdAndSlug () as this =
   do
     this.Maps <-
       HashSet<string> [
-        "map('Categories', category => { 
-          return { 
-            WebLogId : category.WebLogId, 
-            Slug     : category.Slug
-          }
+        "docs.Categories.Select(category => new {
+            WebLogId = category.WebLogId,
+            Slug = category.Slug
         })"
         ]
 (**
-Interestingly, the JavaScript used to create the index looks very similar to the record type definition! Once we are
-done with this step, we can also look at the definitions RavenDB created for **Uno** and **Dos** vs. what these indexes
-look like. _(That is precisely how I learned to create the same indexes between C# and F#.)_
-
 #### Dependency Injection
 
 We'll do the same thing we did for **Dos** - override `DefaultNancyBootstrapper` and register our connection there.
@@ -157,5 +160,6 @@ Now, as with **Dos**, we need to modify `Startup` (just below where we put this 
 At this point, once `dotnet run` displays the "listening on port 5000" message, we should be able to look at RavenDB's
 `O2F3` database and indexes, just as we could for **Uno** and **Dos**.
 
+---
 [Back to Step 3](../step3)
 *)
