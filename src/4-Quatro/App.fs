@@ -10,6 +10,7 @@ module Configure =
   open Indexes
   open Microsoft.Extensions.Configuration
   open Microsoft.Extensions.DependencyInjection
+  open Microsoft.FSharpLu.Json
   open Raven.Client.Documents
   open Raven.Client.Documents.Indexes
   
@@ -24,6 +25,9 @@ module Configure =
     let config = svc.BuildServiceProvider().GetRequiredService<IConfiguration> ()
     let cfg = config.GetSection "RavenDB"
     let store = new DocumentStore (Urls = [| cfg.["Url"] |], Database = cfg.["Database"])
+    store.Conventions.CustomizeJsonDeserializer <-
+      fun x ->
+          x.Converters.Add (CompactUnionJsonConverter ())
     svc.AddSingleton (store.Initialize ()) |> ignore
     IndexCreation.CreateIndexes (typeof<Categories_ByWebLogIdAndSlug>.Assembly, store)
 

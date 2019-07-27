@@ -16,7 +16,7 @@ namespace Dos.Data
 
         public const string WebLog = "WebLogs";
 
-        public static string IdFor(string collection, Guid id) => $"{collection}/{id.ToString()}";
+        public static string IdFor(string collection, Guid id) => $"{collection}/{id.ToString("N")}";
 
         public static (string Collection, Guid Id) FromId(string documentId)
         {

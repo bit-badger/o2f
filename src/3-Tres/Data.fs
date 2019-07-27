@@ -20,7 +20,7 @@ module Collection =
   let User     = "Users"
   let WebLog   = "WebLogs"
   
-  let IdFor coll (docId : Guid) = sprintf "%s/%s" coll (string docId)
+  let IdFor coll (docId : Guid) = sprintf "%s/%s" coll (docId.ToString "N")
 
   let FromId docId =
     try

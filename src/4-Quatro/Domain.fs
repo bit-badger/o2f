@@ -1,11 +1,48 @@
 module Quatro.Domain
 
+open System
+
 type CategoryId = CategoryId of string
-type CommentId  = CommentId  of string 
-type PageId     = PageId     of string
-type PostId     = PostId     of string
-type UserId     = UserId     of string
-type WebLogId   = WebLogId   of string
+module CategoryId =
+  let create = Collection.idFor Collection.Page >> CategoryId
+  let ofString (stringGuid : string) = create (Guid.Parse stringGuid)
+  let toString x = match x with CategoryId y -> y
+  let asGuidString x = ((toString >> Collection.fromId >> snd) x).ToString "N"
+
+type CommentId = CommentId of string 
+module CommentId =
+  let create = Collection.idFor Collection.Page >> CommentId
+  let ofString (stringGuid : string) = create (Guid.Parse stringGuid)
+  let toString x = match x with CommentId y -> y
+  let asGuidString x = ((toString >> Collection.fromId >> snd) x).ToString "N"
+
+type PageId = PageId of string
+module PageId =
+  let create = Collection.idFor Collection.Page >> PageId
+  let ofString (stringGuid : string) = create (Guid.Parse stringGuid)
+  let toString x = match x with PageId y -> y
+  let asGuidString x = ((toString >> Collection.fromId >> snd) x).ToString "N"
+
+type PostId = PostId of string
+module PostId =
+  let create = Collection.idFor Collection.Page >> PostId
+  let ofString (stringGuid : string) = create (Guid.Parse stringGuid)
+  let toString x = match x with PostId y -> y
+  let asGuidString x = ((toString >> Collection.fromId >> snd) x).ToString "N"
+
+type UserId = UserId of string
+module UserId =
+  let create = Collection.idFor Collection.Page >> UserId
+  let ofString (stringGuid : string) = create (Guid.Parse stringGuid)
+  let toString x = match x with UserId y -> y
+  let asGuidString x = ((toString >> Collection.fromId >> snd) x).ToString "N"
+
+type WebLogId = WebLogId of string
+module WebLogId =
+  let create = Collection.idFor Collection.Page >> WebLogId
+  let ofString (stringGuid : string) = create (Guid.Parse stringGuid)
+  let toString x = match x with WebLogId y -> y
+  let asGuidString x = ((toString >> Collection.fromId >> snd) x).ToString "N"
 
 type Permalink = Permalink of string
 type Tag       = Tag       of string
@@ -16,9 +53,9 @@ type Url       = Url       of string
 type ArticleContent =
   | Html     of string
   | Markdown of string
-with
-  member this.Generate () =
-    match this with Html x -> x | Markdown y -> MarkdownSharp.Markdown().Transform y
+module ArticleContent =
+  let generate content =
+    match content with Html x -> x | Markdown y -> MarkdownSharp.Markdown().Transform y
 
 type AuthorizationLevel =
   | Administrator
@@ -46,7 +83,7 @@ with
 
 [<CLIMutable; NoComparison; NoEquality>]
 type Page =
-  { Id             : PageId
+  { Id             : string
     WebLogId       : WebLogId
     AuthorId       : UserId
     Title          : string
@@ -59,7 +96,7 @@ type Page =
     }
 with
   static member Empty = 
-    { Id             = PageId ""
+    { Id             = ""
       WebLogId       = WebLogId ""
       AuthorId       = UserId ""
       Title          = ""
@@ -73,7 +110,7 @@ with
 
 [<CLIMutable; NoComparison; NoEquality>]
 type WebLog =
-  { Id          : WebLogId
+  { Id          : string
     Name        : string
     Subtitle    : string option
     DefaultPage : string
@@ -84,7 +121,7 @@ type WebLog =
 with
   /// An empty web log
   static member Empty =
-    { Id          = WebLogId ""
+    { Id          = ""
       Name        = ""
       Subtitle    = None
       DefaultPage = ""
@@ -101,7 +138,7 @@ type Authorization =
 
 [<CLIMutable; NoComparison; NoEquality>]
 type User =
-  { Id : UserId
+  { Id             : string
     EmailAddress   : string
     PasswordHash   : string
     FirstName      : string
@@ -112,7 +149,7 @@ type User =
     }
 with
   static member Empty =
-    { Id             = UserId ""
+    { Id             = ""
       EmailAddress   = ""
       FirstName      = ""
       LastName       = ""
@@ -124,7 +161,7 @@ with
 
 [<CLIMutable; NoComparison; NoEquality>]
 type Category =
-  { Id          : CategoryId
+  { Id          : string
     WebLogId    : WebLogId
     Name        : string
     Slug        : string
@@ -134,7 +171,7 @@ type Category =
     }
 with
   static member Empty =
-    { Id          = CategoryId "new"
+    { Id          = "new"
       WebLogId    = WebLogId ""
       Name        = ""
       Slug        = ""
@@ -145,7 +182,7 @@ with
 
 [<CLIMutable; NoComparison; NoEquality>]
 type Comment =
-  { Id           : CommentId
+  { Id           : string
     PostId       : PostId
     InReplyToId  : CommentId option
     Name         : string
@@ -157,7 +194,7 @@ type Comment =
     }
 with
   static member Empty =
-    { Id           = CommentId ""
+    { Id           = ""
       PostId       = PostId ""
       InReplyToId  = None
       Name         = ""
@@ -170,7 +207,7 @@ with
 
 [<CLIMutable; NoComparison; NoEquality>]
 type Post =
-  { Id          : PostId
+  { Id          : string
     WebLogId    : WebLogId
     AuthorId    : UserId
     Status      : PostStatus
@@ -185,7 +222,7 @@ type Post =
     }
 with
   static member Empty =
-    { Id          = PostId "new"
+    { Id          = "new"
       WebLogId    = WebLogId ""
       AuthorId    = UserId ""
       Status      = Draft

@@ -8,6 +8,7 @@
     <RootNamespace>Quatro</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Collection.fs" />
     <Compile Include="Domain.fs" />
     <Compile Include="Indexes.fs" />
     <Compile Include="App.fs" />

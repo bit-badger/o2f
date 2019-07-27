@@ -11,5 +11,6 @@ nuget Microsoft.AspNetCore.Server.Kestrel
 nuget Microsoft.Extensions.Configuration.FileExtensions
 nuget Microsoft.Extensions.Configuration.Json
 nuget Microsoft.Extensions.Options.ConfigurationExtensions
+nuget Microsoft.FSharpLu.Json
 nuget Nancy
 nuget RavenDb.Client
