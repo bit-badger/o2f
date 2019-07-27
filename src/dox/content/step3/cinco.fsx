@@ -1,4 +1,5 @@
 (*** hide ***)
+#r @"C:\Windows\Microsoft.NET\assembly\GAC_MSIL\netstandard\v4.0_2.0.0.0__cc7b13ffcd2ddd51\netstandard.dll"
 #r "../../../packages/Chiron/lib/netstandard2.0/Chiron.dll"
 #r "../../../packages/Freya.Core/lib/netstandard2.0/Freya.Core.dll"
 #r "../../../packages/Freya.Machines.Http/lib/netstandard2.0/Freya.Machines.Http.dll"
@@ -9,47 +10,168 @@
 #r "../../../packages/Microsoft.AspNetCore.Http.Abstractions/lib/netstandard2.0/Microsoft.AspNetCore.Http.Abstractions.dll"
 #r "../../../packages/Microsoft.AspNetCore.Owin/lib/netstandard2.0/Microsoft.AspNetCore.Owin.dll"
 #r "../../../packages/Microsoft.AspNetCore.Server.Kestrel/lib/netstandard2.0/Microsoft.AspNetCore.Server.Kestrel.dll"
+#r "../../../packages/Microsoft.FSharpLu.Json/lib/netstandard2.0/Microsoft.FSharpLu.Json.dll"
+#r "../../../packages/Newtonsoft.Json/lib/netstandard2.0/Newtonsoft.Json.dll"
 #r "../../../packages/RavenDb.Client/lib/netstandard2.0/Raven.Client.dll"
 
+namespace Cinco
+
+module Indexes =
+  open Raven.Client.Documents.Indexes
+  open System.Collections.Generic
+  type Categories_ByWebLogIdAndSlug () as this =
+    inherit AbstractJavaScriptIndexCreationTask ()
+    do
+      this.Maps <-
+        HashSet<string> [
+          "docs.Categories.Select(category => new {
+              WebLogId = category.WebLogId,
+              Slug = category.Slug
+          })"
+          ]
 (**
 ### Cinco - Step 3
 
-**TODO - This is the old Quatro from v1; change it!**
+As with our previous versions, we need to add `RavenDb.Client` to `paket.references`, and we'll also need
+`Microsoft.FSharpLu.Json`; run `paket install` after those are added. We'll also utilize the following files from prior
+projects:
 
-As with our previous versions, we'll start by adding the RethinkDB driver to `Quatro.fsproj`; we'll also bring the
-`data-config.json` file from **Dos**/**Tres** into this project, changing the database name to `O2F4`. Follow the
-[instructions for Tres](tres.html) up though the point where it says "Now, we'll create a file `Data.fs`".
+- `data-config.json` from **Tres**, changing the database to `O2F5`;
+- `Data.fs` from **Tres** (changes described below); and
+- `Collection.fs`, `Domain.fs`, and `Indexes.fs` from **Quatro**, changing the module namespaces to `Cinco`.
 
-**Parsing `data.config`**
+The section of `Cinco.fsproj` that specifies the build order should look like this:
 
-We'll use `Data.fs` in this project as well, but we'll do things a bit more functionally.  We'll use
-[Chiron](https://xyncro.tech/chiron/) to parse the JSON file, and we'll set up a discriminated union (DU) for our
-configuration parameters.
+    [lang=xml]
+    <ItemGroup>
+      <Compile Include="Collection.fs" />
+      <Compile Include="Domain.fs" />
+      <Compile Include="Indexes.fs" />
+      <Compile Include="Data.fs" />
+      <Compile Include="App.fs" />
+      <Content Include="data-config.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
 
-First, to be able to use Chiron, we'll need the package.  Add the following line within the `dependencies` section:
+### Parsing `data.config` (and More)
 
-    [lang=text]
-    "Chiron": "6.2.1",
+Up to this point, we've used JSON.NET to parse `data-config.json`. There's nothing wrong with that approach, but we'll
+implement our JSON parsing a different way in this project, using a library from the same people who bring us Freya
+called [Chiron](https://xyncro.tech/chiron/) (pronounced "KY-ron"). Of course, to be able to use it, we have to pull it
+in as a dependency. Add `nuget Chiron` to `paket.dependencies`, add `Chiron` to `paket.references`, and run
+`paket install`.
 
-Then, we'll start `Data.fs` with our DU.
+We'll utilize a discriminated union to declare the supported parameters we allow to be set. Open `Data.fs`, change the
+first line to `module Cinco.Data`, and delete the `Collection` module (we included that in another file). Then, we'll
+add a DU with our expected parameters.
 *)
-namespace Quatro
-
-open Chiron
-// other opens
-type ConfigParameter =
-  | Hostname of string
-  | Port     of int
-  | AuthKey  of string
-  | Timeout  of int
-  | Database of string
 (*** hide ***)
-open RethinkDb.Driver
-open RethinkDb.Driver.Net
-open System
-open System.IO
+module Data =
+(** *)
+  open Chiron
+  open Raven.Client.Documents
 
-// -- begin code lifted from #er demo --
+  type ConfigParameter =
+    | Url      of string
+    | Database of string
+(**
+We've seen DUs like this already; however, with this definition, our `DataConfig` record now becomes dead simple:
+*)
+  type DataConfig = { Parameters : ConfigParameter list }
+(**
+We'll make a module to let us parse this using Chiron. In the module, we'll also include code to configure RavenDB's
+`DocumentStore` object from the configuration.
+*)
+  module DataConfig =
+    let fromJson json =
+      match Json.parse json with
+      | Object config ->
+          { Parameters =
+              config
+              |> Map.toList
+              |> List.map (fun item ->
+                  match item with
+                  | "Url",      String x -> Url x
+                  | "Database", String x -> Database x
+                  | key, value -> invalidOp <| sprintf "Unexpected RavenDB config parameter %s (value %A)" key value)
+            }
+      | _ -> { Parameters = [] }
+(**
+Before we continue, let's take a look at this; there are several new concepts here.
+
+- In other versions, if the JSON didn't parse, we raised an exception, but that was about it. In this one, if the JSON
+doesn't parse, we get a configuration that will end up making no changes to the default `DocumentStore` (which will fail
+on connect, because we haven't specified any URLs). Maybe this is better, maybe not, but it demonstrates that there is a
+way to handle bad JSON other than an exception.
+- `Object` and `String` (and `Number`, though we don't have any) are Chiron types (cases of a DU, actually), so our
+`match` statement uses the destructuring form to "unwrap" the DU's inner value.
+- This version will raise an exception if we attempt to set an option that we do not recognize (something like
+"Databsae" - not that anyone I know would ever type it like that...).
+
+So, it's more code than `JsonConvert.fromJson`, but it gives us control over the deserialization. If we get an
+unexpected parameter, our exception tells what that parameter is. We could also write this in such a way as to raise an
+exception if the parsed JSON doesn't include a `Url` parameter. And, while the parsing of JSON is still in a black box,
+how we handle each value is not.
+
+Moving on to configuring the `DocumentStore`:
+*)
+    let configureStore config store  =
+      config.Parameters
+      |> List.fold
+          (fun (stor : DocumentStore) par -> 
+              match par with
+              | Url url -> stor.Urls <- [| url |]; stor
+              | Database db -> stor.Database <- db; stor)
+          store
+(**
+This demonstrates a powerful concept in functional programming in general, the `fold` function. All F# collection types'
+modules define `fold` for them (and, though the parameter order is different, LINQ defines a similar extension method on
+the `IEnumerable` types called `Aggregate` - you can even use this concept in C# and VB.NET). The concept behind a
+`fold` is not terribly difficult to grasp:
+
+- Start with a known state; in this case, when we call this, the `store` parameter will be called with
+`new DocumentStore ()`.
+- For each item in the collection, you run it through the function, producing a new state. Since `DocumentStore` is a
+.NET class, we mutate one of its properties (depending on what parameter we're processing), and return the same object.
+It doesn't have to be the same object, it just has to be the same type.
+- The result is the modified state.
+
+In F# terms, the signature is `('State -> 'T -> 'State) -> 'State -> 'T list -> 'State`. The function just below
+`List.fold` has the signature of the first function; `stor` is our state, and `par` is the parameter we're processing.
+We pass `store` as the second parameter, and use the `|>` operator to provide the collection. One advantage to composing
+it this way is that the compiler can determine the type of `'T`, so we do not have to specify it. We could include
+`config.Parameters` as the last parameter to `List.fold`, but we'd have to define the type for `par`, as the compiler
+could not infer it.
+
+Why would you want to write this in this way? Let's remember what `App.fs` looked like in **Quatro**:
+
+    [lang=fsharp]
+    let config = svc.BuildServiceProvider().GetRequiredService<IConfiguration> ()
+    let cfg = config.GetSection "RavenDB"
+    let store = new DocumentStore (Urls = [| cfg.["Url"] |], Database = cfg.["Database"])
+    store.Conventions.CustomizeJsonDeserializer <-
+      fun x ->
+          x.Converters.Add (CompactUnionJsonConverter ())
+    svc.AddSingleton (store.Initialize ()) |> ignore
+
+While we won't be adding it to a DI container, the code from **Quatro** is procedural code; build the provider, get the
+section, create the store, add the serializer - it's a step-by-step how-to guide for getting from zero to an initialized
+connection. Conversely, `configureStore` is a description of the transformation that will be applied to a new store.
+This is one of the signs that we're starting to think functionally. Within functional programming, a "pure" function is
+one that has no side effects; every time it is called with the same input, it produces the same return value, and does
+rely on nor change anything else. While `configureStore` may not be considered to be a pure function, due to its
+mutation, it could be considered pure because it will always make the same changes to whatever `DocumentStore` is
+passed.
+*)
+(*** define: index-creation ***)
+  open Indexes
+
+  let ensureIndexes store =
+    IndexCreation.CreateIndexes (typeof<Categories_ByWebLogIdAndSlug>.Assembly, store)
+(**
+Speaking of thinking functionally - time to replace our DI container!
+*)
 (*** define: readerm-definition ***)
 type ReaderM<'d, 'out> = 'd -> 'out
 (*** hide ***)
@@ -63,272 +185,143 @@ module Reader =
 (** *)
 (*** hide ***)
 open Reader
+(** *)
 (**
-This DU looks a bit different than the single-case DUs or enum-style DUs that
-[we made in step 2](../step2/quatro.html).  This is a full-fledged DU with 5 different types, 3 strings and 2 integers.
-The `DataConfig` record now becomes dead simple:
-*)
-type DataConfig = { Parameters : ConfigParameter list }
-(**
-We'll populate that using Chiron's `Json.parse` function.
-*)
-with
-  static member FromJson json =
-    match Json.parse json with
-    | Object config ->
-        let options =
-          config
-          |> Map.toList
-          |> List.map (fun item ->
-              match item with
-              | "Hostname", String x -> Hostname x
-              | "Port",     Number x -> Port <| int x
-              | "AuthKey",  String x -> AuthKey x
-              | "Timeout",  Number x -> Timeout <| int x
-              | "Database", String x -> Database x
-              | key, value ->
-                  raise <| InvalidOperationException
-                              (sprintf "Unrecognized RethinkDB configuration parameter %s (value %A)" key value))
-        { Parameters = options }
-    | _ -> { Parameters = [] }
-(*** define: database-property ***)
-  member this.Database =
-    match this.Parameters
-          |> List.filter (fun x -> match x with Database _ -> true | _ -> false)
-          |> List.tryHead with
-    | Some (Database x) -> x
-    | _ -> RethinkDBConstants.DefaultDbName
-
-(**
-There is a lot to learn in these lines.
-
-* Before, if the JSON didn't parse, we raised an exception, but that was about it.  In this one, if the JSON doesn't
-parse, we get a default connection.  Maybe this is better, maybe not, but it demonstrates that there is a way to handle
-bad JSON other than an exception.
-* `Object`, `String`, and `Number` are Chiron types (cases of a DU, actually), so our `match` statement uses the
-destructuring form to "unwrap" the DU's inner value.  For `String`, `x` is a string, and for `Number`, `x` is a decimal
-(that's why we run it through `int` to make our DUs.
-* This version will raise an exception if we attempt to set an option that we do not recognize (something like
-"databsae" - not that anyone I know would ever type it like that...).
-
-Now, we'll adapt the `CreateConnection ()` function to read this new configuration representation:
-*)
-  member this.CreateConnection () : IConnection =
-    let folder (builder : Connection.Builder) block =
-      match block with
-      | Hostname x -> builder.Hostname x
-      | Port     x -> builder.Port     x
-      | AuthKey  x -> builder.AuthKey  x
-      | Timeout  x -> builder.Timeout  x
-      | Database x -> builder.Db       x
-    let bldr =
-      this.Parameters
-      |> Seq.fold folder (RethinkDB.R.Connection ())
-    upcast bldr.Connect()
-(**
-Our folder function utilizes a `match` on our `ConfigParameter` DU.  Each time through, it **will** return a modified
-version of the `builder` parameter, because one of them will match.  We then create our builder by folding the
-parameter, using `R.Connection ()` as our beginning state, then return its `Connect ()` method.
-
-For now, let's copy the rest of `Data.fs` from **Tres** to **Quatro** - this gives us the table constants and the
-table/index initialization code.
-
-**Dependency Injection: Functional Style**
+#### Dependency Injection with Functional Style
 
 One of the concepts that dependency injection is said to implement is "inversion of control;" rather than an object
 compiling and linking a dependency at compile time, it compiles against an interface, and the concrete implementation
-is provided at runtime.  (This is a bit of an oversimplification, but it's the basic gist.)  If you've ever done
-non-DI/non-IoC work, and learned DI, you've adjusted your thinking from "what do I need" to "what will I need".  In the
-functional world, this is done through a concept called the **`Reader` monad**.  The basic concept is as follows:
+is provided at runtime. (This is a bit of an oversimplification, but it's the basic gist.) If you've ever done
+non-DI/non-IoC work, and learned DI, you've adjusted your thinking from "what do I need" to "what will I need". In the
+functional world, this is done through a concept called the **`Reader` monad**. The basic concept is as follows:
 
-* We have a set of dependencies that we establish and set up in our code.
-* We a process with a dependency that we want to be injected (in our example, our `IConnection` is one such
-dependency).
-* We construct a function that requires this dependency, and returns the result we seek.  Though we won't see it in
-this step, it's easy to imagine a function that requires an `IConnection` and returns a `Post`.
-* We create a function that, given our set of dependencies, will extract the one we need for this process.
-* We run our dependencies through the extraction function, to the dependent function, which takes the dependency and
+- We have a set of dependencies that we establish and set up in our code.
+- We a process with a dependency that we want to be injected (in our case, our `IDocumentStore` is one such dependency).
+- We construct a function that requires this dependency, and returns the result we seek. Though we won't see it in this
+step, it's easy to imagine a function that requires an `IDocumentStore` and returns a `Post`.
+- We create a function that, given our set of dependencies, will extract the one we need for this process.
+- We run our dependencies through the extraction function, to the dependent function, which takes the dependency and
 returns the result.
 
-Confused yet?  Me too - let's look at code instead.  Let's create `Dependencies.fs` and add it to the build order above
-`Entities.fs`.  This write-up won't expound on every line in this file, but we'll hit the highlights to see how all
-this comes together.  `ReaderM` is a generic class, where the first type is the dependency we need, and the second type
+Confused yet? Me too - let's look at code instead. Let's create `Dependencies.fs` and add it to the build order above
+`Domain.fs`. This write-up won't expound on every line in this file, but we'll hit the highlights to see how all
+this comes together. `ReaderM` is a generic class, where the first type is the dependency we need, and the second type
 is the type of our result.
 
 After that (which will come back to in a bit), we'll create our dependencies, and a function to extract an
-`IConnection` from it.
+`IDocumentStore` from it.
 *)
+open Raven.Client.Documents
+
 type IDependencies =
-  abstract Conn : IConnection
+  abstract Store : IDocumentStore
 
 [<AutoOpen>]
 module DependencyExtraction =
-
-  let getConn (deps : IDependencies) = deps.Conn
-(*** hide ***)
-[<AutoOpen>]
-module ExampleExtensions =
-  open System.Threading.Tasks
-
-  // H/T: Suave
-  type AsyncBuilder with
-    /// An extension method that overloads the standard 'Bind' of the 'async' builder. The new overload awaits on
-    /// a standard .NET task
-    member x.Bind(t : Task<'T>, f:'T -> Async<'R>) : Async<'R> = async.Bind (Async.AwaitTask t, f)
-
-    /// An extension method that overloads the standard 'Bind' of the 'async' builder. The new overload awaits on
-    /// a standard .NET task which does not commpute a value
-    member x.Bind(t : Task, f : unit -> Async<'R>) : Async<'R> = async.Bind (Async.AwaitTask t, f)
-    
-    member x.ReturnFrom(t : Task<'T>) : Async<'T> = Async.AwaitTask t
-(** *)
-(*** define: data-module ***)
-[<RequireQualifiedAccess>]
-module Data =
-  let establishEnvironment database conn =
-    let r = RethinkDB.R
-    // etc.
-(*** hide ***)
-    let checkDatabase (db : string) = async { return () }
-    let checkTables () = async { return () }
-    let checkIndexes () =
-      let indexesFor tbl = async { return! r.Table(tbl).IndexList().RunResultAsync<string list> conn }
-      async { return () }
-    async {
-      do! checkDatabase database
-      do! checkTables ()
-      do! checkIndexes ()
-    }
-
+  
+  let getStore (deps : IDependencies) = deps.Store
 (**
-Our `IDependencies` are pretty lean right now, but that's OK; we'll flesh it out in future steps.  We also wrote a
-dead-easy function to get the connection; the signature is literally `IDependencies -> IConnection`.  No `ReaderM`
-funkiness yet!
+Our `IDependencies` are pretty lean right now, but that's OK; we'll flesh it out in future steps. We also wrote a
+dead-easy function to get the store; the signature is literally `IDependencies -> IDocumentStore`. No `ReaderM` in
+sight - yet!
 
 Now that we have a dependency "set" (of one), we need to go to `App.fs` and make sure we actually have a concrete
-instance of this for runtime.  Add this just below the module declaration:
+instance of this for runtime. Change `namespace Cinco` to `module Cinco.App`, and add this just before main function:
 *)
 (*** hide ***)
-[<AutoOpen>]
-module IConnectionExtensions =
-  type IConnection with
-    member this.EstablishEnvironment (database : string) = async { return () }
 module App =
 (** *)
-  let lazyCfg = lazy (File.ReadAllText "data-config.json" |> DataConfig.FromJson)
-  let cfg = lazyCfg.Force()
+  open Data
+  open Microsoft.FSharpLu.Json
+  open Raven.Client.Documents
+  open System.IO
+
+  let cfg = (File.ReadAllText >> DataConfig.fromJson) "data-config.json"
   let deps = {
     new IDependencies with
-      member __.Conn
+      member __.Store
         with get () =
-          let conn = lazy (cfg.CreateConnection ())
-          conn.Force()
-  }
+          let store = lazy (
+            let stor = DataConfig.configureStore cfg (new DocumentStore ())
+            stor.Conventions.CustomizeJsonDeserializer <-
+              fun x ->
+                  x.Converters.Add (CompactUnionJsonConverter ())
+            stor.Initialize ()
+            )
+          store.Force()
+      }
 (**
-Here, we're using `lazy` to do this once-only-and-only-on-demand, then we turn around and pretty much demand it.  If
-you're thinking this sounds a lot like singletons - your thinking is superb!  That's exactly what we're doing here.
-We're also using F#'s inline interface declaration to create an implementation without creating a concrete class in
-which it is held.
+Here, we're using `lazy` to do this only once and only-on-demand, then we turn around and demand it. If you're thinking
+this sounds a lot like a singleton - your thinking is superb! That's exactly what we're doing here. We're also using
+F#'s inline interface declaration to create an implementation without creating a concrete class in which it is held. If
+you hover over `deps` above, you'll see that its type is `IDependencies`; even though we're using a traditional .NET
+interface, we won't have to cast it to its interface type to use it, as it's an anonymous concrete implementation.
 
-Maybe being our own IoC container isn't so bad!  Now, let's take a stab at actually connection, and running the
-`EstablishEnvironment` function on startup.  At the top of `main`:
+Maybe being our own IoC container isn't so bad! There is one piece missing, though, compared to our other
+implementations; we aren't yet making any calls to RavenDB to make sure our indexes exist. Let's add that as a function
+within `Data.fs`, at the bottom of the file:
+*)
+(*** include index-creation ***)
+(**
+Now, let's take a stab at actually pulling our store out of our dependencies, so we can use it to make sure our indexes
+exist. At the top of `main`:
 *)
 (*** hide ***)
   let main _ =
 (** *)
-    let initDb (conn : IConnection) = conn.EstablishEnvironment cfg.Database |> Async.RunSynchronously 
-    let start = liftDep getConn initDb
+    let checkIndexes store = Data.ensureIndexes store
+    let start = liftDep getStore checkIndexes
     start |> run deps
 (*** define: better-init ***)
-    liftDep getConn (Data.establishEnvironment cfg.Database >> Async.RunSynchronously)
+    liftDep getStore Data.ensureIndexes
     |> run deps
-(*** define: composition-almost ***)
-    let almost = Data.establishEnvironment cfg.Database
-(*** define: composition-money ***)
-    let money = Data.establishEnvironment cfg.Database >> Async.RunSynchronously
 (*** hide ***)
     0
 (**
-But wait - we don't have a `Database` property on our data config; our configuration is just a list of
-`ConfigParameter` selections.  No worries, though; we can expose a database property on it pretty easily.
-*)
+If we're letting the types be our guide, how are we doing with these? `checkIndexes` has the signature
+`IDocumentStore -> unit`, `start` has the signature `ReaderM<IDependencies, unit>`, and the third line is simply `unit`
+(which we can tell because the compiler isn't telling us we need to ignore the value or assign it). And, were we to run
+it, it would work, but... it's not really composable. Do we really want to have to define three variables every time we
+do something that requires a dependency? Of course not.
 
-(*** include: database-property ***)
-
-(**
-OK - now our red squiggly lines are gone.  Now, if Jiminy Cricket had written F#, he would have told Pinocchio "Let the
-types be your guide".  So, how are we doing with these?  `initDb` has the signature `IConnection -> unit`, `start` has
-the signature `ReaderM<IDependencies, unit>`, and the third line is simply `unit`.  And, were we to run it, it would
-work, but... it's not really composable.
-
-Creating extension methods on objects works great in C#-land, and as we've seen, it works the same way in F#-land.
-However, in the case where we want to write functions that expect an `IConnection` and return our expected result,
-extension methods are not what we need.  Let's change our `AutoOpen`ed `DataExtensions` module to something like this:
-*)
-(*** include: data-module ***)
-(**
-Now, we have a function with the signature `string -> IConnection -> Async<unit>`.  This gets us close, but we still
-have issues on either side of that signature.  On the front, if we were just hard-coding the database name, we could
-drop the string parameter, and we'd have our `IConnection` as the first parameter.  On the return value, we will need
-to run the `Async` workflow (remember, in F#, they're not started automatically); we need `unit`, not `Async<unit>`.
-
-We'll use two key F# concepts to fix this up.  Currying (also known as partial application) allows us to look at every
-return value that isn't the result as a function that's one step closer.  Looking at our signature above, you could
-express it in English as "a function that takes a string, and returns a function that takes an `IConnection` and
-returns an `Async` workflow."  So, to get a function that starts with an `IConnection`, we just provide the database
-name.
-*)
-(*** include: composition-almost ***)
-(**
-The signature for `almost` is `IConnection -> Async<unit>`.  Just what we want.  For the latter, we use composition.
-This is a word that can be used, for example, to describe the way the collection modules expect the collection as the
-final parameter, allowing the output of one to be piped, using the `|>` operator, to the input of the next.  The other
-is with the `>>` operator, which says to use the output of the first function as the input of the second function,
-creating a single function from the two.  This is the one we'll use to run our `Async` workflow.
-*)
-(*** include: composition-money ***)
-(**
-The signature for `money` is now `IConnection -> unit`, just like we need.
-
-Now, let's revisit `initDb` above.  Since we don't need the `IConnection` as a parameter, we can change that definition
-to the same thing we have for `money` above.  And, since we don't need the parameter, we can just inline the call after
-`getConn`; we'll just need to wrap the expression in parentheses to indicate that it's a function on its own.  And, we
-don't need the definition of `start` anymore either - we can just pipe our entire expression into `run deps`.
+Notice that the signature for `checkIndexes` is the same as `Data.ensureIndexes`; `checkIndexes` is redundant. And,
+there's no need to establish a variable for `start` either; we can just pipe our entire expression into `run deps`.
 *)
 (*** include: better-init ***)
 (**
-It works!  We set up our dependencies, we composed a function using a dependency, and we used a `Reader` monad to make
-it all work.  But, how did it work?  Given what we just learned above, let's look at the steps; we're coders, not
+It works! We set up our dependencies, we composed a function using a dependency, and we used a `Reader` monad to make it
+all work.  But, how did it work?  Given what we just learned above, let's look at the steps; we're coders, not
 magicians.
 
 First up, `liftDeps`.
 *)
 (*** include: lift-dep ***)
 (**
-The `proj` parameter is defined as a function that takes one value and returns another one.  The `rm` parameter is a
+The `proj` parameter is defined as a function that takes one value and returns another one. The `rm` parameter is a
 `Reader` monad that takes the **return** value of `proj`, and returns a `Reader` monad that takes the **parameter**
-value of `proj` and returns an output type.  We passed `getConn` as the `proj` parameter, and its signature is
-`IDependencies -> IConnection`; the second parameter was a function with the signature `IConnection -> unit`.  Where
-does this turn into a `ReaderM`?  Why, the definition, of course!
+value of `proj` and returns an output type. We passed `getStore` as the `proj` parameter, and its signature is
+`IDependencies -> IDocumentStore`; the second parameter was a function with the signature `IDocumentStore -> unit`.
+Where does this turn into a `ReaderM`? Why, the definition, of course!
 *)
 (*** include: readerm-definition ***)
 (**
-So, `liftDep` derived the expected `ReaderM` type from `getConn`; `'d1` is `IDependencies` and `'d2` is `IConnection`.
-This means that the next parameter should be a function which takes an `IConnection` and returns the output of the type
-we expect.  Since we pass in `IConnection -> unit`, `output` is `unit`.  When all is said and done, if we were to
-assign a value to the top line, we would end up with `ReaderM<IDependencies, unit>`.
+So, `liftDep` derived the expected `ReaderM` type from `getStore`; `'d1` is `IDependencies` and `'d2` is
+`IDocumentStore`. This means that the next parameter should be a function which takes an `IDocumentStore` and returns
+the output of the type we expect.  Since we pass in `IDocumentStore -> unit`, `'output` is `unit`. When all is said and
+done, if we were to assign a value to the top line, we would end up with `ReaderM<IDependencies, unit>`.
 
-Now, to run it.  `run` is defined as:
+Now, to run it. `run` is defined as:
 *)
 (*** include: run ***)
 (**
-This is way easier than what we've seen up to this point.  It takes an object and a `ReaderM`, and applies the object
-to the first parameter of the monad.  By `|>`ing the `ReaderM<IDependencies, unit>` to it, and providing our
-`IDependencies` instance, we receive the result; the reader has successfully encapsulated all the functions below it.
-From this point on, we'll just make sure our types are correct, and we'll be able to utilize not only an `IConnection`
-for data manipulation, but any other dependencies we may need to define.
+This is way easier than what we've seen up to this point. It takes an object and a `ReaderM`, and applies the object to
+the first parameter of the monad. By `|>`ing the `ReaderM<IDependencies, unit>` to it, and providing our `IDependencies`
+instance, we receive the result; the reader has successfully encapsulated all the functions below it. From this point
+on, we'll just make sure our types are correct, and we'll be able to utilize not only an `IDocumentStore` for data
+manipulation, but any other dependencies we may need to define.
 
-Take a deep breath.  Step 3 is done, and not only does it work, we understand why it works.   
+Take a deep breath. Step 3 is done, and not only does it work, we understand why it works.   
 
+---
 [Back to Step 3](../step3)
 *)

@@ -1,5 +1,6 @@
 source https://www.nuget.org/api/v2
 
+nuget Chiron
 nuget FAKE
 nuget Freya
 nuget FSharp.Core

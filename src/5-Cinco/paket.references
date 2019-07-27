@@ -1,4 +1,7 @@
+Chiron
 Freya
 MarkdownSharp
 Microsoft.AspNetCore.Owin
 Microsoft.AspNetCore.Server.Kestrel
+Microsoft.FSharpLu.Json
+RavenDb.Client

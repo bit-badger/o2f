@@ -8,8 +8,15 @@
     <RootNamespace>Cinco</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Collection.fs" />
+    <Compile Include="Dependencies.fs" />
     <Compile Include="Domain.fs" />
+    <Compile Include="Indexes.fs" />
+    <Compile Include="Data.fs" />
     <Compile Include="App.fs" />
+    <Content Include="data-config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

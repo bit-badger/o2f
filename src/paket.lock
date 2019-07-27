@@ -6,6 +6,11 @@ NUGET
     Anat (1.1.1) - restriction: || (>= net45) (>= netstandard2.0)
       FSharp.Core (>= 4.3.4) - restriction: || (>= net45) (>= netstandard2.0)
       System.ValueTuple (>= 4.4) - restriction: >= net45
+    Chiron (6.3.1)
+      Aether (>= 8.2) - restriction: || (>= net452) (>= netstandard2.0)
+      FParsec (>= 1.0.3) - restriction: || (>= net452) (>= netstandard2.0)
+      FSharp.Core (>= 4.3.4) - restriction: || (>= net452) (>= netstandard2.0)
+      System.ValueTuple (>= 4.4) - restriction: >= net452
     FAKE (5.8.4)
     FParsec (1.0.3) - restriction: || (>= net45) (>= netstandard2.0)
       FSharp.Core (>= 4.0.0.1) - restriction: >= net40

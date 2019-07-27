@@ -1,4 +1,4 @@
-module Quatro.Indexes
+module Cinco.Indexes
 
 open Raven.Client.Documents.Indexes
 open System.Collections.Generic
