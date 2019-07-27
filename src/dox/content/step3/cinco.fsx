@@ -56,7 +56,7 @@ The section of `Cinco.fsproj` that specifies the build order should look like th
 
 ### Parsing `data.config` (and More)
 
-Up to this point, we've used JSON.NET to parse `data-config.json`. There's nothing wrong with that approach, but we'll
+Up to this point, we've used JSON.Net to parse `data-config.json`. There's nothing wrong with that approach, but we'll
 implement our JSON parsing a different way in this project, using a library from the same people who bring us Freya
 called [Chiron](https://xyncro.tech/chiron/) (pronounced "KY-ron"). Of course, to be able to use it, we have to pull it
 in as a dependency. Add `nuget Chiron` to `paket.dependencies`, add `Chiron` to `paket.references`, and run
@@ -125,12 +125,12 @@ Moving on to configuring the `DocumentStore`:
               | Database db -> stor.Database <- db; stor)
           store
 (**
-This demonstrates a powerful concept in functional programming in general, the `fold` function. All F# collection types'
-modules define `fold` for them (and, though the parameter order is different, LINQ defines a similar extension method on
-the `IEnumerable` types called `Aggregate` - you can even use this concept in C# and VB.NET). The concept behind a
-`fold` is not terribly difficult to grasp:
+This demonstrates a powerful concept in functional programming (not just F#), the `fold` function. All F# collection
+types' modules define `fold` for them (and, though the parameter order is different, LINQ defines a similar extension
+method on the `IEnumerable` types called `Aggregate` - you can even use this concept in C# and VB.NET). The concept
+behind a `fold` is not terribly difficult to grasp:
 
-- Start with a known state; in this case, when we call this, the `store` parameter will be called with
+- Start with a known state; in our case, when we call this, the `store` parameter will be called with
 `new DocumentStore ()`.
 - For each item in the collection, you run it through the function, producing a new state. Since `DocumentStore` is a
 .NET class, we mutate one of its properties (depending on what parameter we're processing), and return the same object.
@@ -157,12 +157,12 @@ Why would you want to write this in this way? Let's remember what `App.fs` looke
 
 While we won't be adding it to a DI container, the code from **Quatro** is procedural code; build the provider, get the
 section, create the store, add the serializer - it's a step-by-step how-to guide for getting from zero to an initialized
-connection. Conversely, `configureStore` is a description of the transformation that will be applied to a new store.
-This is one of the signs that we're starting to think functionally. Within functional programming, a "pure" function is
-one that has no side effects; every time it is called with the same input, it produces the same return value, and does
-rely on nor change anything else. While `configureStore` may not be considered to be a pure function, due to its
-mutation, it could be considered pure because it will always make the same changes to whatever `DocumentStore` is
-passed.
+connection. Conversely, `configureStore` is a description of the transformation that will be applied to a new store, one
+of the hallmarks of functional thinking. Within functional programming, a "pure" function is one that has no side
+effects; every time it is called with the same input, it produces the same return value, and does not rely on nor change
+anything else. While some may not consider `configureStore` a pure function due to its use of mutation, from a logic
+standpoint it is, as it will always make the same changes to whatever `DocumentStore` is passed. It's an isolated
+transformation.
 *)
 (*** define: index-creation ***)
   open Indexes
@@ -261,7 +261,7 @@ Maybe being our own IoC container isn't so bad! There is one piece missing, thou
 implementations; we aren't yet making any calls to RavenDB to make sure our indexes exist. Let's add that as a function
 within `Data.fs`, at the bottom of the file:
 *)
-(*** include index-creation ***)
+(*** include: index-creation ***)
 (**
 Now, let's take a stab at actually pulling our store out of our dependencies, so we can use it to make sure our indexes
 exist. At the top of `main`:
@@ -281,8 +281,8 @@ exist. At the top of `main`:
 If we're letting the types be our guide, how are we doing with these? `checkIndexes` has the signature
 `IDocumentStore -> unit`, `start` has the signature `ReaderM<IDependencies, unit>`, and the third line is simply `unit`
 (which we can tell because the compiler isn't telling us we need to ignore the value or assign it). And, were we to run
-it, it would work, but... it's not really composable. Do we really want to have to define three variables every time we
-do something that requires a dependency? Of course not.
+it, it would work, but... it's not really composable. Do we really want to have to define two extra variables every time
+we do something that requires a dependency? Of course not.
 
 Notice that the signature for `checkIndexes` is the same as `Data.ensureIndexes`; `checkIndexes` is redundant. And,
 there's no need to establish a variable for `start` either; we can just pipe our entire expression into `run deps`.
@@ -305,12 +305,22 @@ Where does this turn into a `ReaderM`? Why, the definition, of course!
 *)
 (*** include: readerm-definition ***)
 (**
-So, `liftDep` derived the expected `ReaderM` type from `getStore`; `'d1` is `IDependencies` and `'d2` is
-`IDocumentStore`. This means that the next parameter should be a function which takes an `IDocumentStore` and returns
-the output of the type we expect.  Since we pass in `IDocumentStore -> unit`, `'output` is `unit`. When all is said and
-done, if we were to assign a value to the top line, we would end up with `ReaderM<IDependencies, unit>`.
+Remember the time we spent discussing the `>>` operator? `ReaderM` is an alias for a one-parameter function, and
+`liftDep` uses it to compose one function with another, returning a one-parameter function. In concrete types for
+`liftDep`'s generics in our example, using `getStore` for `proj` means that `'d1` is `IDocumentStore` and `'d2` is
+`IDependencies`. (Note that `proj` is `'d2 -> 'd1`; that's why its parameters are reversed from `getStore`'s.) When we
+passed `Data.ensureIndexes` as `rm`, its `'d1` is `IDocumentStore`, and `'output` is `unit`. When these two functions
+are composed, we end up with a function that requires `IDependencies` (`'d2`) and returns `unit` (`'output`); this
+matches the definition of `liftDep`'s output type, as `ReaderM<'d2, 'output>` is an alias for `'d2 -> 'output`.
 
-Now, to run it. `run` is defined as:
+If your head is spinning, get it stabilized, then read through that again. It can be quite complex - until it clicks.
+Then, it's like a light bulb goes off above your head. "Oh, it's called a **reader** monad because it shows us how to
+**read** the part we need from an object!" That's exactly what it does. We need a document store, and this other object
+has it; `ReaderM` lets us specify how to "read" (obtain) that dependency. We are free to write as many
+`IDocumentStore`-requiring functions as we want, and we'll be able to use `liftDep` and `getStore` to change those into
+`IDependencies`-requiring functions that return the same thing.
+
+Then, we can run them! `run` is defined as:
 *)
 (*** include: run ***)
 (**

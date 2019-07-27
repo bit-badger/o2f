@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>quatro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="A working example to demonstrate to C# developers how F# can improve their workflow and performance"/>
+    <meta name="author" content="Daniel J. Summers"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+
+    <link type="text/css" rel="stylesheet" href="/content/style.css" />
+    <script type="text/javascript" src="/content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="https://github.com/bit-badger/o2f">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="/index.html">objects |> functions</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h3><a name="Quatro-Step-3" class="anchor" href="#Quatro-Step-3">Quatro - Step 3</a></h3>
+<p>Once again, we need to add the RavenDB dependency to <code>paket.references</code>; we'll also need to add some ASP.NET Core
+references as well. The new references are:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="id">Microsoft</span><span class="pn">.</span><span class="id">Extensions</span><span class="pn">.</span><span class="id">Configuration</span><span class="pn">.</span><span class="id">FileExtensions</span>
+<span onmouseout="hideTip(event, 'fs1', 2)" onmouseover="showTip(event, 'fs1', 2)" class="id">Microsoft</span><span class="pn">.</span><span class="id">Extensions</span><span class="pn">.</span><span class="id">Configuration</span><span class="pn">.</span><span class="id">Json</span>
+<span onmouseout="hideTip(event, 'fs1', 3)" onmouseover="showTip(event, 'fs1', 3)" class="id">Microsoft</span><span class="pn">.</span><span class="id">Extensions</span><span class="pn">.</span><span class="id">Options</span><span class="pn">.</span><span class="id">ConfigurationExtensions</span>
+<span class="id">RavenDb</span><span class="pn">.</span><span class="id">Client</span>
+</code></pre></td>
+</tr>
+</table>
+<p>The, run <code>paket install</code> to register these as as part of this project.</p>
+<h4><a name="Configuring-the-Connection-and-Dependency-Injection" class="anchor" href="#Configuring-the-Connection-and-Dependency-Injection">Configuring the Connection and Dependency Injection</a></h4>
+<p>As we're back in ASP.NET Core land, we'll do these together. We'll return to <code>appsettings.json</code> for our configuration;
+create that file with these values.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="json">{
+  "RavenDB": {
+    "Url": "http://localhost:8080",
+    "Database": "O2F4"
+  }
+}
+</code></pre></td></tr></table>
+<p>We'll also need to make sure the file is copied to the build directory, so add the following to <code>Quatro.fsproj</code>, inside
+the list of compiled files:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="xml"><span class="k">&lt;</span><span class="i">Content</span> <span class="o">Include</span><span class="k">="appsettings.json"</span><span class="k">&gt;</span>
+  <span class="k">&lt;</span><span class="i">CopyToOutputDirectory</span><span class="k">&gt;</span>Always<span class="k">&lt;/</span><span class="i">CopyToOutputDirectory</span><span class="k">&gt;</span>
+<span class="k">&lt;/</span><span class="i">Content</span><span class="k">&gt;</span>
+</code></pre></td></tr></table>
+<p>In <a href="../step1/quatro-cinco.html">step 2</a>, we mentioned that we are going to change most of our namespace declarations to
+modules instead. In <code>App.fs</code>, let's change <code>namespace Quatro</code> to <code>module Quatro.App</code>, remove the <code>module App</code>
+declaration near the bottom of the file, and move <code>let main</code> out to column 1. After that, we will convert the
+initialization and DI logic to the function-based initialization we used in step 1. When the functions get pulled into
+the <code>WebHostBuilder</code>, their shapes may be a bit different than the <code>Startup</code> class-based ones.</p>
+<p>Here is what our new <code>Configure</code> module looks like:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+<span class="l">21: </span>
+<span class="l">22: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs6', 11)" onmouseover="showTip(event, 'fs6', 11)" class="rt">RequireQualifiedAccess</span><span class="pn">&gt;]</span>
+<span class="k">module</span> <span class="m">Configure</span> <span class="o">=</span>
+  
+  <span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 12)" onmouseover="showTip(event, 'fs1', 12)" class="id">Microsoft</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs7', 13)" onmouseover="showTip(event, 'fs7', 13)" class="id">Extensions</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 14)" onmouseover="showTip(event, 'fs8', 14)" class="id">Configuration</span>
+  <span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 15)" onmouseover="showTip(event, 'fs1', 15)" class="id">Microsoft</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs7', 16)" onmouseover="showTip(event, 'fs7', 16)" class="id">Extensions</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 17)" onmouseover="showTip(event, 'fs9', 17)" class="id">DependencyInjection</span>
+  <span class="k">open</span> <span onmouseout="hideTip(event, 'fs10', 18)" onmouseover="showTip(event, 'fs10', 18)" class="id">Raven</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 19)" onmouseover="showTip(event, 'fs11', 19)" class="id">Client</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs12', 20)" onmouseover="showTip(event, 'fs12', 20)" class="id">Documents</span>
+  
+  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs13', 21)" onmouseover="showTip(event, 'fs13', 21)" class="fn">configuration</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs14', 22)" onmouseover="showTip(event, 'fs14', 22)" class="id">ctx</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs15', 23)" onmouseover="showTip(event, 'fs15', 23)" class="rt">WebHostBuilderContext</span><span class="pn">)</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs16', 24)" onmouseover="showTip(event, 'fs16', 24)" class="id">cfg</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs17', 25)" onmouseover="showTip(event, 'fs17', 25)" class="if">IConfigurationBuilder</span><span class="pn">)</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs16', 26)" onmouseover="showTip(event, 'fs16', 26)" class="fn">cfg</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs18', 27)" onmouseover="showTip(event, 'fs18', 27)" class="id">SetBasePath</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs14', 28)" onmouseover="showTip(event, 'fs14', 28)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs19', 29)" onmouseover="showTip(event, 'fs19', 29)" class="id">HostingEnvironment</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 30)" onmouseover="showTip(event, 'fs20', 30)" class="id">ContentRootPath</span><span class="pn">)</span>
+      <span class="pn">.</span><span class="id">AddJsonFile</span><span class="pn">(</span><span class="s">&quot;appsettings.json&quot;</span><span class="pn">,</span> <span class="id">optional</span> <span class="o">=</span> <span class="k">true</span><span class="pn">,</span> <span class="id">reloadOnChange</span> <span class="o">=</span> <span class="k">true</span><span class="pn">)</span>
+      <span class="pn">.</span><span class="id">AddJsonFile</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs21', 31)" onmouseover="showTip(event, 'fs21', 31)" class="fn">sprintf</span> <span class="s">&quot;appsettings.</span><span class="pf">%s</span><span class="s">.json&quot;</span> <span onmouseout="hideTip(event, 'fs14', 32)" onmouseover="showTip(event, 'fs14', 32)" class="id">ctx</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs19', 33)" onmouseover="showTip(event, 'fs19', 33)" class="id">HostingEnvironment</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 34)" onmouseover="showTip(event, 'fs22', 34)" class="id">EnvironmentName</span><span class="pn">,</span> <span class="id">optional</span> <span class="o">=</span> <span class="k">true</span><span class="pn">)</span>
+      <span class="pn">.</span><span class="id">AddEnvironmentVariables</span> <span class="pn">(</span><span class="pn">)</span>
+    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs23', 35)" onmouseover="showTip(event, 'fs23', 35)" class="fn">ignore</span>
+        
+  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs24', 36)" onmouseover="showTip(event, 'fs24', 36)" class="fn">services</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs25', 37)" onmouseover="showTip(event, 'fs25', 37)" class="id">svc</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs26', 38)" onmouseover="showTip(event, 'fs26', 38)" class="if">IServiceCollection</span><span class="pn">)</span> <span class="o">=</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs27', 39)" onmouseover="showTip(event, 'fs27', 39)" class="id">config</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs25', 40)" onmouseover="showTip(event, 'fs25', 40)" class="fn">svc</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs28', 41)" onmouseover="showTip(event, 'fs28', 41)" class="id">BuildServiceProvider</span><span class="pn">(</span><span class="pn">)</span><span class="pn">.</span><span class="id">GetRequiredService</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs29', 42)" onmouseover="showTip(event, 'fs29', 42)" class="if">IConfiguration</span><span class="pn">&gt;</span> <span class="pn">(</span><span class="pn">)</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs30', 43)" onmouseover="showTip(event, 'fs30', 43)" class="id">cfg</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs27', 44)" onmouseover="showTip(event, 'fs27', 44)" class="fn">config</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 45)" onmouseover="showTip(event, 'fs31', 45)" class="id">GetSection</span> <span class="s">&quot;RavenDB&quot;</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs32', 46)" onmouseover="showTip(event, 'fs32', 46)" class="id">store</span> <span class="o">=</span> <span class="k">new</span> <span onmouseout="hideTip(event, 'fs33', 47)" onmouseover="showTip(event, 'fs33', 47)" class="d">DocumentStore</span> <span class="pn">(</span><span class="id">Urls</span> <span class="o">=</span> <span class="pn">[|</span> <span onmouseout="hideTip(event, 'fs30', 48)" onmouseover="showTip(event, 'fs30', 48)" class="id">cfg</span><span class="pn">.</span><span class="pn">[</span><span class="s">&quot;Url&quot;</span><span class="pn">]</span> <span class="pn">|]</span><span class="pn">,</span> <span class="id">Database</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs30', 49)" onmouseover="showTip(event, 'fs30', 49)" class="id">cfg</span><span class="pn">.</span><span class="pn">[</span><span class="s">&quot;Database&quot;</span><span class="pn">]</span><span class="pn">)</span>
+    <span onmouseout="hideTip(event, 'fs25', 50)" onmouseover="showTip(event, 'fs25', 50)" class="fn">svc</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs34', 51)" onmouseover="showTip(event, 'fs34', 51)" class="id">AddSingleton</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs32', 52)" onmouseover="showTip(event, 'fs32', 52)" class="fn">store</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs35', 53)" onmouseover="showTip(event, 'fs35', 53)" class="id">Initialize</span> <span class="pn">(</span><span class="pn">)</span><span class="pn">)</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs23', 54)" onmouseover="showTip(event, 'fs23', 54)" class="fn">ignore</span>
+
+  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs36', 55)" onmouseover="showTip(event, 'fs36', 55)" class="fn">app</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs37', 56)" onmouseover="showTip(event, 'fs37', 56)" class="id">app</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs38', 57)" onmouseover="showTip(event, 'fs38', 57)" class="if">IApplicationBuilder</span><span class="pn">)</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs37', 58)" onmouseover="showTip(event, 'fs37', 58)" class="fn">app</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs39', 59)" onmouseover="showTip(event, 'fs39', 59)" class="id">UseGiraffe</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs40', 60)" onmouseover="showTip(event, 'fs40', 60)" class="fn">htmlString</span> <span class="s">&quot;Hello World from Giraffe&quot;</span><span class="pn">)</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Then, within our <code>main</code>, we'll call these new functions; our <code>host</code> definition now looks like:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">use</span> <span onmouseout="hideTip(event, 'fs41', 61)" onmouseover="showTip(event, 'fs41', 61)" class="id">host</span> <span class="o">=</span>
+  <span class="id">WebHostBuilder</span><span class="pn">(</span><span class="pn">)</span>
+    <span class="pn">.</span><span class="id">ConfigureAppConfiguration</span><span class="pn">(</span><span class="id">Configure</span><span class="pn">.</span><span class="id">configuration</span><span class="pn">)</span>
+    <span class="pn">.</span><span class="id">UseKestrel</span><span class="pn">(</span><span class="pn">)</span>
+    <span class="pn">.</span><span class="id">ConfigureServices</span><span class="pn">(</span><span class="id">Configure</span><span class="pn">.</span><span class="id">services</span><span class="pn">)</span>
+    <span class="pn">.</span><span class="id">Configure</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs42', 62)" onmouseover="showTip(event, 'fs42', 62)" class="id">System</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs43', 63)" onmouseover="showTip(event, 'fs43', 63)" class="id">Action</span><span class="pn">&lt;</span><span class="id">IApplicationBuilder</span><span class="pn">&gt;</span> <span class="id">Configure</span><span class="pn">.</span><span class="id">app</span><span class="pn">)</span>
+    <span class="pn">.</span><span class="id">Build</span> <span class="pn">(</span><span class="pn">)</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Notice that we've moved our <code>open</code> statements for types that we do not need outside of the <code>Configure</code> module to appear
+inside it. This is a way that F# can help isolate namespace conflicts. If you have ever worked on an application that
+decided to name a type using a common term (<code>Table</code> comes to my mind), the few namespaces you open, the less chance you
+have of running into a competing definition of the same type.</p>
+<h4><a name="Ensuring-Indexes-Exist" class="anchor" href="#Ensuring-Indexes-Exist">Ensuring Indexes Exist</a></h4>
+<p>We'll bring across <code>Indexes.fs</code> from <strong>Tres</strong>, changing it to <code>Quatro</code>, and adding it to the compile order between
+<code>Domain.fs</code> and <code>App.fs</code>. Then, we can go back to our <code>Configure.services</code> function, and add the <code>IndexCreation</code> call
+to create our indexes:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="id">IndexCreation</span><span class="pn">.</span><span class="id">CreateIndexes</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs44', 64)" onmouseover="showTip(event, 'fs44', 64)" class="id">typeof</span><span class="pn">&lt;</span><span class="id">Categories_ByWebLogIdAndSlug</span><span class="pn">&gt;</span><span class="pn">.</span><span class="id">Assembly</span><span class="pn">,</span> <span class="id">store</span><span class="pn">)</span>
+</code></pre></td>
+</tr>
+</table>
+<p>(We need to open <code>Raven.Client.Documents.Indexes</code> and <code>Indexes</code> (our module) for this call to work.)</p>
+<h4><a name="Revising-the-Data-Model" class="anchor" href="#Revising-the-Data-Model">Revising the Data Model</a></h4>
+<p>At this point, we need to change some things in our data model, before they bite us later on in the project. By
+convention, when RavenDB persists POCOs, it looks for an <code>Id</code> field of type <code>string</code>, and if it does not find one, it
+generates one within the document itself. <em>(You can also define it as <code>Guid</code> if you want, but that's not quite what
+we're doing with our keys.)</em> I did a lot of testing on various ways around not having to define identifiers with
+<code>Id : string</code>, but none of my tricks worked.</p>
+<p>This will be another "seam" between F# representations and the .NET environment in general. However, we wouldn't be able
+to get a single-case DU from an HTTP request either, so this gives us an opportunity to learn another common F# pattern.
+When we <a href="../step2/quatro-cinco.html">defined the data model originally</a> and replaced <code>IArticleContent</code> with a multi-case
+DU, I added a <code>Generate</code> method to the DU's type, but mentioned that we may end up changing that. Let's do that now, as
+we'll use a similar technique to develop a repeatable way to deal with these seams.</p>
+<p>This common pattern is to use a type definition for the type itself, then define a module with the same name as the type
+to hold the behavior associated with that type. The module will be compiled with the word <code>Module</code> appended to the name
+of the class; this used to require an attribute, but was such a common pattern, it became part of the way the language
+works.</p>
+<p>Here's our new <code>ArticleContent</code> definition:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">  <span class="k">type</span> <span onmouseout="hideTip(event, 'fs60', 95)" onmouseover="showTip(event, 'fs60', 95)" class="rt">ArticleContent</span> <span class="o">=</span>
+    <span class="pn">|</span> <span onmouseout="hideTip(event, 'fs61', 96)" onmouseover="showTip(event, 'fs61', 96)" class="uc">Html</span>     <span class="k">of</span> <span onmouseout="hideTip(event, 'fs62', 97)" onmouseover="showTip(event, 'fs62', 97)" class="rt">string</span>
+    <span class="pn">|</span> <span onmouseout="hideTip(event, 'fs63', 98)" onmouseover="showTip(event, 'fs63', 98)" class="uc">Markdown</span> <span class="k">of</span> <span onmouseout="hideTip(event, 'fs62', 99)" onmouseover="showTip(event, 'fs62', 99)" class="rt">string</span>
+
+  <span class="k">module</span> <span onmouseout="hideTip(event, 'fs60', 100)" onmouseover="showTip(event, 'fs60', 100)" class="m">ArticleContent</span> <span class="o">=</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs64', 101)" onmouseover="showTip(event, 'fs64', 101)" class="fn">generate</span> <span onmouseout="hideTip(event, 'fs65', 102)" onmouseover="showTip(event, 'fs65', 102)" class="id">content</span> <span class="o">=</span>
+      <span class="k">match</span> <span onmouseout="hideTip(event, 'fs65', 103)" onmouseover="showTip(event, 'fs65', 103)" class="id">content</span> <span class="k">with</span> <span onmouseout="hideTip(event, 'fs61', 104)" onmouseover="showTip(event, 'fs61', 104)" class="uc">Html</span> <span onmouseout="hideTip(event, 'fs66', 105)" onmouseover="showTip(event, 'fs66', 105)" class="id">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs66', 106)" onmouseover="showTip(event, 'fs66', 106)" class="id">x</span> <span class="pn">|</span> <span onmouseout="hideTip(event, 'fs63', 107)" onmouseover="showTip(event, 'fs63', 107)" class="uc">Markdown</span> <span onmouseout="hideTip(event, 'fs67', 108)" onmouseover="showTip(event, 'fs67', 108)" class="id">y</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs68', 109)" onmouseover="showTip(event, 'fs68', 109)" class="rt">MarkdownSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs69', 110)" onmouseover="showTip(event, 'fs69', 110)" class="id">Markdown</span><span class="pn">(</span><span class="pn">)</span><span class="pn">.</span><span class="id">Transform</span> <span onmouseout="hideTip(event, 'fs67', 111)" onmouseover="showTip(event, 'fs67', 111)" class="id">y</span>
+</code></pre></td>
+</tr>
+</table>
+<p>That's the pattern we'll use for our identifiers. To begin, create a file named <code>Collection.fs</code>, and bring over the
+<code>Collection</code> module from <strong>Tres</strong>. There, we did not need it for our domain, but the modules for our Id types will rely
+on it, so it needs to appear in the compilation order ahead of <code>Domain.fs</code>. In <code>Quatro.fsproj</code>, that's where it will go
+- just before <code>Domain.fs</code>. We'll also change <code>IdFor</code> to <code>idFor</code> and <code>FromId</code> to <code>fromId</code>.
+(<a href="https://github.com/bit-badger/o2f/tree/step-3/src/4-Quatro/Collection.fs">the result</a>)</p>
+<p>As we've used the <code>Page</code> type for our examples thus far, we'll continue to use it for our example here. Our previous
+definition of <code>PageId</code> was <code>type PageId = PageId of string</code>. As we think through the various edges and seams of the
+project, there are five different transformations we'll need:</p>
+<ul>
+<li>
+Converting a string PageId to a <code>PageId</code>; this is what we'll use if the web log has a static page defined as its home
+page.
+</li>
+<li>Converting a <code>PageId</code> to just the string <code>Guid</code> representation; this is what we'll use to define links to edit pages.</li>
+<li>
+Converting a just a string <code>Guid</code> to a <code>PageId</code>; this is what we'll use to grab the Id from a URL, and apply it to the
+proper collection. <em>(We are fine if this bombs when given a non-GUID string; make invalid states unrepresentable...)</em>
+</li>
+<li>Converting a <code>PageId</code> to a string; this is what we'll use to set the <code>Page.Id</code> field.</li>
+<li>Creating a <code>PageId</code> from a <code>Guid</code>; this will be used when the user creates a new page.</li>
+</ul>
+<p>The first scenario is how the constructor works; <code>PageId Pages/[guid-string]</code> is what we want there. The other four
+requirements are implemented in the <code>PageId</code> module:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">  <span class="k">type</span> <span onmouseout="hideTip(event, 'fs70', 112)" onmouseover="showTip(event, 'fs70', 112)" class="rt">PageId</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs70', 113)" onmouseover="showTip(event, 'fs70', 113)" class="uc">PageId</span> <span class="k">of</span> <span onmouseout="hideTip(event, 'fs62', 114)" onmouseover="showTip(event, 'fs62', 114)" class="rt">string</span>
+  <span class="k">module</span> <span onmouseout="hideTip(event, 'fs71', 115)" onmouseover="showTip(event, 'fs71', 115)" class="m">PageId</span> <span class="o">=</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs72', 116)" onmouseover="showTip(event, 'fs72', 116)" class="fn">create</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs73', 117)" onmouseover="showTip(event, 'fs73', 117)" class="m">Collection</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs46', 118)" onmouseover="showTip(event, 'fs46', 118)" class="id">idFor</span> <span onmouseout="hideTip(event, 'fs73', 119)" onmouseover="showTip(event, 'fs73', 119)" class="m">Collection</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs45', 120)" onmouseover="showTip(event, 'fs45', 120)" class="id">Page</span> <span class="o">&gt;</span><span class="pn">&gt;</span> <span onmouseout="hideTip(event, 'fs70', 121)" onmouseover="showTip(event, 'fs70', 121)" class="uc">PageId</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs74', 122)" onmouseover="showTip(event, 'fs74', 122)" class="fn">ofString</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs75', 123)" onmouseover="showTip(event, 'fs75', 123)" class="id">stringGuid</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs62', 124)" onmouseover="showTip(event, 'fs62', 124)" class="rt">string</span><span class="pn">)</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs72', 125)" onmouseover="showTip(event, 'fs72', 125)" class="fn">create</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs49', 126)" onmouseover="showTip(event, 'fs49', 126)" class="vt">Guid</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs56', 127)" onmouseover="showTip(event, 'fs56', 127)" class="id">Parse</span> <span onmouseout="hideTip(event, 'fs75', 128)" onmouseover="showTip(event, 'fs75', 128)" class="id">stringGuid</span><span class="pn">)</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs76', 129)" onmouseover="showTip(event, 'fs76', 129)" class="fn">toString</span> <span onmouseout="hideTip(event, 'fs77', 130)" onmouseover="showTip(event, 'fs77', 130)" class="id">x</span> <span class="o">=</span> <span class="k">match</span> <span onmouseout="hideTip(event, 'fs77', 131)" onmouseover="showTip(event, 'fs77', 131)" class="id">x</span> <span class="k">with</span> <span onmouseout="hideTip(event, 'fs70', 132)" onmouseover="showTip(event, 'fs70', 132)" class="uc">PageId</span> <span onmouseout="hideTip(event, 'fs67', 133)" onmouseover="showTip(event, 'fs67', 133)" class="id">y</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs67', 134)" onmouseover="showTip(event, 'fs67', 134)" class="id">y</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs78', 135)" onmouseover="showTip(event, 'fs78', 135)" class="fn">asGuidString</span> <span onmouseout="hideTip(event, 'fs77', 136)" onmouseover="showTip(event, 'fs77', 136)" class="id">x</span> <span class="o">=</span> <span class="fn">(</span><span class="pn">(</span><span onmouseout="hideTip(event, 'fs76', 137)" onmouseover="showTip(event, 'fs76', 137)" class="fn">toString</span> <span class="o">&gt;</span><span class="pn">&gt;</span> <span onmouseout="hideTip(event, 'fs73', 138)" onmouseover="showTip(event, 'fs73', 138)" class="m">Collection</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs51', 139)" onmouseover="showTip(event, 'fs51', 139)" class="id">fromId</span> <span class="o">&gt;</span><span class="pn">&gt;</span> <span onmouseout="hideTip(event, 'fs79', 140)" onmouseover="showTip(event, 'fs79', 140)" class="fn">snd</span><span class="pn">)</span> <span onmouseout="hideTip(event, 'fs77', 141)" onmouseover="showTip(event, 'fs77', 141)" class="id">x</span><span class="pn">)</span><span class="pn">.</span><span class="id">ToString</span> <span class="s">&quot;N&quot;</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Thanks to the two functions we defined in the <code>Collection</code> module, we can use composition and currying a good bit here.
+We've seen the <code>|&gt;</code> operator before, the operator that sends the output of the function before it to the function after
+it; the <code>&gt;&gt;</code> operator does a similar thing, but at the function definition level.</p>
+<p><code>create</code> demonstrates this; even though we did not specify any parameters on the function, its signature is
+<code>Guid -&gt; PageId</code>. When we combine functions with <code>&gt;&gt;</code>, its expected input will be the final input from the first
+function; <code>Collection.idFor</code>'s signature is <code>string -&gt; Guid -&gt; string</code>, but we have provided the first string, which (by
+the rules of currying) makes the statement before the <code>&gt;&gt;</code> have the signature <code>Guid -&gt; string</code>. When we combine via
+<code>&gt;&gt;</code>, the output of the first function will be applied as the last parameter of the next function. As <code>PageId</code> is a
+single-case DU, its constructor's signature is <code>string -&gt; PageId</code>. Since the return value of the first part is <code>string</code>,
+and the expected input for <code>PageId</code> is string, we can combine them together. When we do, we get a function that has the
+signature <code>Guid -&gt; PageId</code>.</p>
+<blockquote>
+<p>Think of the difference between <code>|&gt;</code> and <code>&gt;&gt;</code> as the difference between execution and definition. We just as well
+could have defined <code>create</code> as <code>let create x = Collection.idFor Collection.Page x |&gt; PageId</code>, which implies that the
+function will execute first, then send its output to the next one; in our definition above, we describe a chain of
+functions that create a new function that just has one input and one output. Execution-wise, these are equivalent; in
+fact, <code>let create x = PageId (Collection.IdFor Collection.Page x)</code> is also equivalent.</p>
+<p>One other note - sometimes, when composing via <code>&gt;&gt;</code>, the compiler may complain about a "value restriction." This means
+that, in the course of execution, the thing that appears to be a function will actually be executed once, and its
+result remembered, rather than executing each time. There is a good under-the-hood reason for this, but it can seem to
+be a strange quirk the first time you encounter it. To get around it, just specify the parameter and add it to the
+function body where it's needed.</p>
+</blockquote>
+<p>Remember, "let the types be your guide;" if you're still unclear about how those four definitions work, hover over each
+piece of them. You'll see the signatures for each of the functions that we chained together, and how the output of one
+is the final input parameter of the next. <code>snd</code> may be new; F# provides <code>fst</code> and <code>snd</code> to get the first and second
+values in a tuple; since <code>Collection.fromId</code> returns a <code>string * Guid</code> tuple, <code>snd</code> gives us the <code>Guid</code> part.</p>
+<p>We need to change the definition of <code>Page</code> to use <code>string</code> for the Id now.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs80', 142)" onmouseover="showTip(event, 'fs80', 142)" class="rt">CLIMutable</span><span class="pn">;</span> <span onmouseout="hideTip(event, 'fs81', 143)" onmouseover="showTip(event, 'fs81', 143)" class="rt">NoComparison</span><span class="pn">;</span> <span onmouseout="hideTip(event, 'fs82', 144)" onmouseover="showTip(event, 'fs82', 144)" class="rt">NoEquality</span><span class="pn">&gt;]</span>
+<span class="k">type</span> <span class="rt">Page</span> <span class="o">=</span>
+  <span class="pn">{</span> <span onmouseout="hideTip(event, 'fs83', 145)" onmouseover="showTip(event, 'fs83', 145)" class="id">Id</span>             <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs84', 146)" onmouseover="showTip(event, 'fs84', 146)" class="rt">string</span>
+    <span class="c">// ...</span>
+    <span class="pn">}</span>
+<span class="k">with</span>
+  <span class="k">static</span> <span class="k">member</span> <span class="prop">Empty</span> <span class="o">=</span> 
+    <span class="pn">{</span> <span class="id">Id</span>             <span class="o">=</span> <span class="s">&quot;&quot;</span>
+      <span class="c">// ...</span>
+      <span class="pn">}</span>
+</code></pre></td>
+</tr>
+</table>
+<p>We will write similar modules for all of the Id types, and change the Ids in each type to strings; however, if an Id is
+not the Id for that type, we will leave it as a DU. So, for example, <code>Page.WebLogId</code> still has the <code>WebLogId</code> type.</p>
+<p>You may be thinking that this seems like boilerplate code that we thought F# helped us avoid; and, from one perspective,
+it is. However, even though it's much more code, it defines how we move from the primitive-value world into the
+strongly-typed environment of our application. And, while the presence of a <code>PageId</code> module doesn't keep us from writing
+<code>let pg = { Page.empty with Id = "abc123" }</code>, it does provide an easy way for us to <strong>not</strong> do that. Just as we
+developed the discipline of adding a new file to the project file when we created it, we will develop the discipline of
+creating strongly-typed Ids in our request handlers the first time we address them, and only ever setting an Id field
+using one of these functions, ideally deferring this to the point where it's stored in RavenDB. In effect, we'll push
+all the primitives out to the edges of the application.</p>
+<p>We won't need these for the other single-case DUs; however, there is another tweak we'll need to make for them.</p>
+<h4><a name="Single-Case-DUs-to-JSON" class="anchor" href="#Single-Case-DUs-to-JSON">Single-Case DUs to JSON</a></h4>
+<p>I mentioned on a prior page that JSON.Net has great F# support. While this is true, it can generate rather verbose
+output for some types, and discriminated unions are one of those. As an example, if we have a variable named <code>x</code> defined
+as a <code>string option</code> that has the value <code>abc123</code>, this will be serialized as...</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="json">{
+  "x":
+    "Case": "Some",
+    "Fields": [
+      "Value": "abc123"
+    ]
+}
+</code></pre></td></tr></table>
+<p>There are times where this is exactly what we want. Imagine we had a DU case of type <code>string * int * string</code>; this
+structure is a great way to represent it in JSON. For single-case DUs, though <em>(which <code>Option&lt;'T&gt;</code> is)</em>, this is going
+to make it very difficult to write a query based on the value of <code>x</code>. In these cases, what we would prefer to see is
+something like...</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="json">{
+  "x": "abc123"
+}
+</code></pre></td></tr></table>
+<p>...or, in cases where <code>x</code> is <code>None</code>...</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="json">{
+  "x": null
+}
+</code></pre></td></tr></table>
+<p>... (or even have <code>x</code> excluded from the output).</p>
+<p>There is a package called Microsoft.FSharpLu.Json that provides a JSON.Net converter that handles these cases; and,
+since RavenDB uses JSON.Net to serialize the documents, all we have to do is tell it to use it. This will be a new
+reference overall, so we'll need to add <code>nuget Microsoft.FSharpLu.Json</code> to <code>paket.dependencies</code>, and then add
+<code>Microsoft.FSharpLu.Json</code> to <code>paket.references</code> in <strong>Quatro</strong>. (<code>paket install</code> as usual.)</p>
+<p>Then, in <code>App.fs</code>, we'll need to open the namespace (within the <code>Configure</code> module):</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 147)" onmouseover="showTip(event, 'fs1', 147)" class="id">Microsoft</span><span class="pn">.</span><span class="id">FSharpLu</span><span class="pn">.</span><span class="id">Json</span>
+</code></pre></td>
+</tr>
+</table>
+<p>...and add the following just above the call to <code>svc.AddSingleton</code>:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="id">store</span><span class="pn">.</span><span class="id">Conventions</span><span class="pn">.</span><span class="id">CustomizeJsonDeserializer</span> <span class="k">&lt;-</span>
+  <span class="k">fun</span> <span class="id">x</span> <span class="k">-&gt;</span>
+      <span class="id">x</span><span class="pn">.</span><span class="id">Converters</span><span class="pn">.</span><span class="id">Add</span> <span class="pn">(</span><span class="id">CompactUnionJsonConverter</span> <span class="pn">(</span><span class="pn">)</span><span class="pn">)</span>
+</code></pre></td>
+</tr>
+</table>
+<p>This will serialize the single-case DUs as we described above, including our Id fields that aren't the actual Id of a
+document (those that point to other documents; our foreign keys, in relational terms). Additionally, our multi-case DUs
+that have no associated types will be serialized as strings, so statuses and levels will look just as though we were
+still using a defined set of magic strings.</p>
+<p>As we move along, we may need to write other <code>JsonConverter</code>s; if we do, we'll just need to add them to the function
+above. One important thing to remember is that JSON.Net will use the first matching converter it finds; so, if we write
+a converter for a DU, the new one will need to go above the <code>CompactUnionJsonConverter</code> or that one will be used
+instead.</p>
+<p>Congratulations - <strong>Quatro</strong> should be ready to go! Ensure you've created an O2F4 database in RavenDB, then <code>dotnet run</code>
+this project and ensure that the store is initialized properly, and all indexes are created the way they were for our
+previous versions. And, know that we'll carry every bit of this hard work forward to <strong><a href="./cinco.html">Cinco</a></strong>;
+replacing DI will be our learning activity there.</p>
+<hr />
+<p><a href="../step3">Back to Step 3</a></p>
+
+<div class="tip" id="fs1">namespace Microsoft</div>
+<div class="tip" id="fs2">namespace Giraffe</div>
+<div class="tip" id="fs3">namespace Microsoft.AspNetCore</div>
+<div class="tip" id="fs4">namespace Microsoft.AspNetCore.Builder</div>
+<div class="tip" id="fs5">namespace Microsoft.AspNetCore.Hosting</div>
+<div class="tip" id="fs6">Multiple items<br />type RequireQualifiedAccessAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; RequireQualifiedAccessAttribute<br /><br />--------------------<br />new : unit -&gt; RequireQualifiedAccessAttribute</div>
+<div class="tip" id="fs7">namespace Microsoft.Extensions</div>
+<div class="tip" id="fs8">namespace Microsoft.Extensions.Configuration</div>
+<div class="tip" id="fs9">namespace Microsoft.Extensions.DependencyInjection</div>
+<div class="tip" id="fs10">namespace Raven</div>
+<div class="tip" id="fs11">namespace Raven.Client</div>
+<div class="tip" id="fs12">namespace Raven.Client.Documents</div>
+<div class="tip" id="fs13">val configuration : ctx:WebHostBuilderContext -&gt; cfg:IConfigurationBuilder -&gt; unit</div>
+<div class="tip" id="fs14">val ctx : WebHostBuilderContext</div>
+<div class="tip" id="fs15">Multiple items<br />type WebHostBuilderContext =<br />&#160;&#160;new : unit -&gt; WebHostBuilderContext<br />&#160;&#160;member Configuration : IConfiguration with get, set<br />&#160;&#160;member HostingEnvironment : IHostingEnvironment with get, set<br /><br />--------------------<br />WebHostBuilderContext() : WebHostBuilderContext</div>
+<div class="tip" id="fs16">val cfg : IConfigurationBuilder</div>
+<div class="tip" id="fs17">type IConfigurationBuilder =<br />&#160;&#160;member Add : source:IConfigurationSource -&gt; IConfigurationBuilder<br />&#160;&#160;member Build : unit -&gt; IConfigurationRoot<br />&#160;&#160;member Properties : IDictionary&lt;string, obj&gt;<br />&#160;&#160;member Sources : IList&lt;IConfigurationSource&gt;</div>
+<div class="tip" id="fs18">(extension) IConfigurationBuilder.SetBasePath(basePath: string) : IConfigurationBuilder</div>
+<div class="tip" id="fs19">property WebHostBuilderContext.HostingEnvironment: IHostingEnvironment</div>
+<div class="tip" id="fs20">property IHostingEnvironment.ContentRootPath: string</div>
+<div class="tip" id="fs21">val sprintf : format:Printf.StringFormat&lt;&#39;T&gt; -&gt; &#39;T</div>
+<div class="tip" id="fs22">property IHostingEnvironment.EnvironmentName: string</div>
+<div class="tip" id="fs23">val ignore : value:&#39;T -&gt; unit</div>
+<div class="tip" id="fs24">val services : svc:IServiceCollection -&gt; unit</div>
+<div class="tip" id="fs25">val svc : IServiceCollection</div>
+<div class="tip" id="fs26">type IServiceCollection =<br />&#160;&#160;inherit IList&lt;ServiceDescriptor&gt;<br />&#160;&#160;inherit ICollection&lt;ServiceDescriptor&gt;<br />&#160;&#160;inherit IEnumerable&lt;ServiceDescriptor&gt;<br />&#160;&#160;inherit IEnumerable</div>
+<div class="tip" id="fs27">val config : IConfiguration</div>
+<div class="tip" id="fs28">(extension) IServiceCollection.BuildServiceProvider() : ServiceProvider<br />(extension) IServiceCollection.BuildServiceProvider(validateScopes: bool) : ServiceProvider<br />(extension) IServiceCollection.BuildServiceProvider(options: ServiceProviderOptions) : ServiceProvider</div>
+<div class="tip" id="fs29">type IConfiguration =<br />&#160;&#160;member GetChildren : unit -&gt; IEnumerable&lt;IConfigurationSection&gt;<br />&#160;&#160;member GetReloadToken : unit -&gt; IChangeToken<br />&#160;&#160;member GetSection : key:string -&gt; IConfigurationSection<br />&#160;&#160;member Item : string -&gt; string with get, set</div>
+<div class="tip" id="fs30">val cfg : IConfigurationSection</div>
+<div class="tip" id="fs31">IConfiguration.GetSection(key: string) : IConfigurationSection</div>
+<div class="tip" id="fs32">val store : DocumentStore</div>
+<div class="tip" id="fs33">Multiple items<br />type DocumentStore =<br />&#160;&#160;inherit DocumentStoreBase<br />&#160;&#160;new : unit -&gt; DocumentStore<br />&#160;&#160;member AggressivelyCacheFor : cacheDuration:TimeSpan * ?database:string -&gt; IDisposable + 1 overload<br />&#160;&#160;member BulkInsert : ?database:string * ?token:CancellationToken -&gt; BulkInsertOperation<br />&#160;&#160;member Changes : ?database:string -&gt; IDatabaseChanges + 1 overload<br />&#160;&#160;member DisableAggressiveCaching : ?database:string -&gt; IDisposable<br />&#160;&#160;member Dispose : unit -&gt; unit<br />&#160;&#160;member GetLastDatabaseChangesStateException : ?database:string * ?nodeTag:string -&gt; Exception<br />&#160;&#160;member GetRequestExecutor : ?database:string -&gt; RequestExecutor<br />&#160;&#160;member Identifier : string with get, set<br />&#160;&#160;member Initialize : unit -&gt; IDocumentStore<br />&#160;&#160;...<br /><br />--------------------<br />DocumentStore() : DocumentStore</div>
+<div class="tip" id="fs34">(extension) IServiceCollection.AddSingleton&lt;&#39;TService,&#39;TImplementation (requires reference type and reference type and &#39;TImplementation :&gt; &#39;TService)&gt;() : IServiceCollection<br />(extension) IServiceCollection.AddSingleton&lt;&#39;TService (requires reference type)&gt;() : IServiceCollection<br />(extension) IServiceCollection.AddSingleton(serviceType: System.Type) : IServiceCollection<br />(extension) IServiceCollection.AddSingleton&lt;&#39;TService (requires reference type)&gt;(implementationFactory: System.Func&lt;System.IServiceProvider,&#39;TService&gt;) : IServiceCollection<br />(extension) IServiceCollection.AddSingleton&lt;&#39;TService,&#39;TImplementation (requires reference type and reference type and &#39;TImplementation :&gt; &#39;TService)&gt;(implementationFactory: System.Func&lt;System.IServiceProvider,&#39;TImplementation&gt;) : IServiceCollection<br />(extension) IServiceCollection.AddSingleton&lt;&#39;TService (requires reference type)&gt;(implementationInstance: &#39;TService) : IServiceCollection<br />(extension) IServiceCollection.AddSingleton(serviceType: System.Type, implementationType: System.Type) : IServiceCollection<br />(extension) IServiceCollection.AddSingleton(serviceType: System.Type, implementationFactory: System.Func&lt;System.IServiceProvider,obj&gt;) : IServiceCollection<br />(extension) IServiceCollection.AddSingleton(serviceType: System.Type, implementationInstance: obj) : IServiceCollection</div>
+<div class="tip" id="fs35">DocumentStore.Initialize() : IDocumentStore</div>
+<div class="tip" id="fs36">val app : app:IApplicationBuilder -&gt; unit</div>
+<div class="tip" id="fs37">val app : IApplicationBuilder</div>
+<div class="tip" id="fs38">type IApplicationBuilder =<br />&#160;&#160;member ApplicationServices : IServiceProvider with get, set<br />&#160;&#160;member Build : unit -&gt; RequestDelegate<br />&#160;&#160;member New : unit -&gt; IApplicationBuilder<br />&#160;&#160;member Properties : IDictionary&lt;string, obj&gt;<br />&#160;&#160;member ServerFeatures : IFeatureCollection<br />&#160;&#160;member Use : middleware:Func&lt;RequestDelegate, RequestDelegate&gt; -&gt; IApplicationBuilder</div>
+<div class="tip" id="fs39">member IApplicationBuilder.UseGiraffe : handler:HttpHandler -&gt; unit</div>
+<div class="tip" id="fs40">val htmlString : html:string -&gt; HttpHandler</div>
+<div class="tip" id="fs41">val host : obj</div>
+<div class="tip" id="fs42">namespace System</div>
+<div class="tip" id="fs43">Multiple items<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11,&#39;T12,&#39;T13,&#39;T14,&#39;T15,&#39;T16&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 * &#39;T12 * &#39;T13 * &#39;T14 * &#39;T15 * &#39;T16 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11,&#39;T12,&#39;T13,&#39;T14,&#39;T15&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 * &#39;T12 * &#39;T13 * &#39;T14 * &#39;T15 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11,&#39;T12,&#39;T13,&#39;T14&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 * &#39;T12 * &#39;T13 * &#39;T14 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11,&#39;T12,&#39;T13&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 * &#39;T12 * &#39;T13 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11,&#39;T12&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 * &#39;T12 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10,&#39;T11&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 * &#39;T11 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9,&#39;T10&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 * &#39;T10 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8,&#39;T9&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 * &#39;T9 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7,&#39;T8&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 * &#39;T8 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6,&#39;T7&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 * &#39;T7 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5,&#39;T6&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 * &#39;T6 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4,&#39;T5&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 * &#39;T5 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3,&#39;T4&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 * &#39;T4 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2,&#39;T3&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 * &#39;T3 -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T1,&#39;T2&gt; =<br />&#160;&#160;delegate of &#39;T1 * &#39;T2 -&gt; unit<br /><br />--------------------<br />type Action =<br />&#160;&#160;delegate of unit -&gt; unit<br /><br />--------------------<br />type Action&lt;&#39;T&gt; =<br />&#160;&#160;delegate of &#39;T -&gt; unit</div>
+<div class="tip" id="fs44">val typeof&lt;&#39;T&gt; : System.Type</div>
+<div class="tip" id="fs45">val Page : string</div>
+<div class="tip" id="fs46">val idFor : coll:string -&gt; docId:Guid -&gt; string</div>
+<div class="tip" id="fs47">val coll : string</div>
+<div class="tip" id="fs48">val docId : Guid</div>
+<div class="tip" id="fs49">Multiple items<br />type Guid =<br />&#160;&#160;struct<br />&#160;&#160;&#160;&#160;new : b:byte[] -&gt; Guid + 4 overloads<br />&#160;&#160;&#160;&#160;member CompareTo : value:obj -&gt; int + 1 overload<br />&#160;&#160;&#160;&#160;member Equals : o:obj -&gt; bool + 1 overload<br />&#160;&#160;&#160;&#160;member GetHashCode : unit -&gt; int<br />&#160;&#160;&#160;&#160;member ToByteArray : unit -&gt; byte[]<br />&#160;&#160;&#160;&#160;member ToString : unit -&gt; string + 2 overloads<br />&#160;&#160;&#160;&#160;static val Empty : Guid<br />&#160;&#160;&#160;&#160;static member NewGuid : unit -&gt; Guid<br />&#160;&#160;&#160;&#160;static member Parse : input:string -&gt; Guid<br />&#160;&#160;&#160;&#160;static member ParseExact : input:string * format:string -&gt; Guid<br />&#160;&#160;&#160;&#160;...<br />&#160;&#160;end<br /><br />--------------------<br />Guid ()<br />Guid(b: byte []) : Guid<br />Guid(g: string) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte []) : Guid<br />Guid(a: uint32, b: uint16, c: uint16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid<br />Guid(a: int, b: int16, c: int16, d: byte, e: byte, f: byte, g: byte, h: byte, i: byte, j: byte, k: byte) : Guid</div>
+<div class="tip" id="fs50">Guid.ToString() : string<br />Guid.ToString(format: string) : string<br />Guid.ToString(format: string, provider: IFormatProvider) : string</div>
+<div class="tip" id="fs51">val fromId : docId:string -&gt; string * Guid</div>
+<div class="tip" id="fs52">val docId : string</div>
+<div class="tip" id="fs53">val parts : string []</div>
+<div class="tip" id="fs54">val isNull : value:&#39;T -&gt; bool (requires &#39;T : null)</div>
+<div class="tip" id="fs55">property Array.Length: int</div>
+<div class="tip" id="fs56">Guid.Parse(input: string) : Guid</div>
+<div class="tip" id="fs57">field Guid.Empty: Guid</div>
+<div class="tip" id="fs58">Multiple items<br />type FormatException =<br />&#160;&#160;inherit SystemException<br />&#160;&#160;new : unit -&gt; FormatException + 2 overloads<br /><br />--------------------<br />FormatException() : FormatException<br />FormatException(message: string) : FormatException<br />FormatException(message: string, innerException: exn) : FormatException</div>
+<div class="tip" id="fs59">module Domain<br /><br />from Quatro</div>
+<div class="tip" id="fs60">type ArticleContent =<br />&#160;&#160;| Html of string<br />&#160;&#160;| Markdown of string</div>
+<div class="tip" id="fs61">union case ArticleContent.Html: string -&gt; ArticleContent</div>
+<div class="tip" id="fs62">Multiple items<br />val string : value:&#39;T -&gt; string<br /><br />--------------------<br />type string = String</div>
+<div class="tip" id="fs63">union case ArticleContent.Markdown: string -&gt; ArticleContent</div>
+<div class="tip" id="fs64">val generate : content:ArticleContent -&gt; string</div>
+<div class="tip" id="fs65">val content : ArticleContent</div>
+<div class="tip" id="fs66">val x : string</div>
+<div class="tip" id="fs67">val y : string</div>
+<div class="tip" id="fs68">namespace MarkdownSharp</div>
+<div class="tip" id="fs69">Multiple items<br />type Markdown =<br />&#160;&#160;new : unit -&gt; Markdown + 2 overloads<br />&#160;&#160;member AsteriskIntraWordEmphasis : bool with get, set<br />&#160;&#160;member AutoHyperlink : bool with get, set<br />&#160;&#160;member AutoNewLines : bool with get, set<br />&#160;&#160;member EmptyElementSuffix : string with get, set<br />&#160;&#160;member LinkEmails : bool with get, set<br />&#160;&#160;member StrictBoldItalic : bool with get, set<br />&#160;&#160;member Transform : text:string -&gt; string<br />&#160;&#160;member Version : string<br /><br />--------------------<br />MarkdownSharp.Markdown() : MarkdownSharp.Markdown<br />MarkdownSharp.Markdown(loadOptionsFromConfigFile: bool) : MarkdownSharp.Markdown<br />MarkdownSharp.Markdown(options: MarkdownSharp.MarkdownOptions) : MarkdownSharp.Markdown</div>
+<div class="tip" id="fs70">Multiple items<br />union case PageId.PageId: string -&gt; PageId<br /><br />--------------------<br />type PageId = | PageId of string</div>
+<div class="tip" id="fs71">Multiple items<br />union case PageId.PageId: string -&gt; PageId<br /><br />--------------------<br />module PageId<br /><br />from Quatro.Domain<br /><br />--------------------<br />type PageId = | PageId of string</div>
+<div class="tip" id="fs72">val create : (Guid -&gt; PageId)</div>
+<div class="tip" id="fs73">module Collection<br /><br />from Quatro</div>
+<div class="tip" id="fs74">val ofString : stringGuid:string -&gt; PageId</div>
+<div class="tip" id="fs75">val stringGuid : string</div>
+<div class="tip" id="fs76">val toString : x:PageId -&gt; string</div>
+<div class="tip" id="fs77">val x : PageId</div>
+<div class="tip" id="fs78">val asGuidString : x:PageId -&gt; string</div>
+<div class="tip" id="fs79">val snd : tuple:(&#39;T1 * &#39;T2) -&gt; &#39;T2</div>
+<div class="tip" id="fs80">Multiple items<br />type CLIMutableAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; CLIMutableAttribute<br /><br />--------------------<br />new : unit -&gt; CLIMutableAttribute</div>
+<div class="tip" id="fs81">Multiple items<br />type NoComparisonAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; NoComparisonAttribute<br /><br />--------------------<br />new : unit -&gt; NoComparisonAttribute</div>
+<div class="tip" id="fs82">Multiple items<br />type NoEqualityAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; NoEqualityAttribute<br /><br />--------------------<br />new : unit -&gt; NoEqualityAttribute</div>
+<div class="tip" id="fs83">Page.Id: string</div>
+<div class="tip" id="fs84">Multiple items<br />val string : value:&#39;T -&gt; string<br /><br />--------------------<br />type string = System.String</div>
+
+        </div>
+        <div class="span3">
+          <img src="/img/logo.png" alt="F# Project" style="width:150px;margin:10px" />  
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">objects |> functions</li>
+            <li><a href="/index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="https://github.com/bit-badger/o2f">Source Code on GitHub</a></li>
+            <li><a href="/license.html">License</a></li>
+            <li class="divider"></li>
+            <li class="nav-header">Steps</li>
+            <li><a href="/step0.html"><strong>0 |> Environment</strong></a></li>
+            <li><a href="/step1/"><strong>1 |> Hello World</strong></a></li>
+            <li><a href="/step2"><strong>2 |> Data Model</strong></a></li>
+            <li><a href="/step3"><strong>3 |> RavenDB Connection</strong></a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="https://github.com/bit-badger/o2f"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+  </body>
+  </html>

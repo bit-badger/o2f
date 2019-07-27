@@ -34,7 +34,16 @@
           
 <h3><a name="Tres-Step-1" class="anchor" href="#Tres-Step-1">Tres - Step 1</a></h3>
 <p>Here, we're making the leap to F#. Once we ensure that our project file is named <code>Tres.fsproj</code>, the contents of the file
-should be the same as they were for <a href="./dos.html">Dos</a>. F# projects are historically not split into directories, as
+should be the same as they were for <a href="./dos.html">Dos</a>, just with different namespaces. We'll also need to specify a
+dependency on F#'s core library, so we'll add the following to <code>paket.dependencies</code>:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="id">nuget</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="id">FSharp</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs2', 2)" onmouseover="showTip(event, 'fs2', 2)" class="id">Core</span>
+</code></pre></td>
+</tr>
+</table>
+<p>...and copy <code>paket.references</code> over from <strong>Dos</strong>. Once it's in our project, add an <code>FSharp.Core</code> line to it.</p>
+<p>This is a good time to talke about F# project structure. F# projects are historically not split into directories, as
 compilation order is significant, and having them in the same directory allows the tooling to ensure that the
 compilation order is preserved. With the structure of the <code>.fsproj</code> file, this is not necessarily a limitation (as you
 can edit the <code>.fsproj</code> file directly to specify subdirectory compilation order), but we'll follow it for our purposes
@@ -50,15 +59,15 @@ here.</p>
 <span class="l">8: </span>
 <span class="l">9: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">namespace</span> <span onmouseout="hideTip(event, 'fs1', 1)" onmouseover="showTip(event, 'fs1', 1)" class="id">Tres</span>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">namespace</span> <span onmouseout="hideTip(event, 'fs3', 3)" onmouseover="showTip(event, 'fs3', 3)" class="id">Tres</span>
 
-<span class="k">open</span> <span onmouseout="hideTip(event, 'fs2', 2)" onmouseover="showTip(event, 'fs2', 2)" class="id">Nancy</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs4', 4)" onmouseover="showTip(event, 'fs4', 4)" class="id">Nancy</span>
 
-<span class="k">type</span> <span onmouseout="hideTip(event, 'fs3', 3)" onmouseover="showTip(event, 'fs3', 3)" class="rt">HomeModule</span> <span class="pn">(</span><span class="pn">)</span> <span class="k">as</span> <span onmouseout="hideTip(event, 'fs4', 4)" onmouseover="showTip(event, 'fs4', 4)" class="mv">this</span> <span class="o">=</span>
-  <span class="k">inherit</span> <span onmouseout="hideTip(event, 'fs5', 5)" onmouseover="showTip(event, 'fs5', 5)" class="rt">NancyModule</span> <span class="pn">(</span><span class="pn">)</span>
+<span class="k">type</span> <span onmouseout="hideTip(event, 'fs5', 5)" onmouseover="showTip(event, 'fs5', 5)" class="rt">HomeModule</span> <span class="pn">(</span><span class="pn">)</span> <span class="k">as</span> <span onmouseout="hideTip(event, 'fs6', 6)" onmouseover="showTip(event, 'fs6', 6)" class="mv">this</span> <span class="o">=</span>
+  <span class="k">inherit</span> <span onmouseout="hideTip(event, 'fs7', 7)" onmouseover="showTip(event, 'fs7', 7)" class="rt">NancyModule</span> <span class="pn">(</span><span class="pn">)</span>
 
   <span class="k">do</span>
-    <span onmouseout="hideTip(event, 'fs4', 6)" onmouseover="showTip(event, 'fs4', 6)" class="mv">this</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs6', 7)" onmouseover="showTip(event, 'fs6', 7)" class="id">Get</span><span class="pn">(</span><span class="s">&quot;/&quot;</span><span class="pn">,</span> <span class="k">fun</span> <span class="id">_</span> <span class="k">-&gt;</span> <span class="s">&quot;Hello World from Nancy F#&quot;</span><span class="pn">)</span>
+    <span onmouseout="hideTip(event, 'fs6', 8)" onmouseover="showTip(event, 'fs6', 8)" class="mv">this</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 9)" onmouseover="showTip(event, 'fs8', 9)" class="id">Get</span><span class="pn">(</span><span class="s">&quot;/&quot;</span><span class="pn">,</span> <span class="k">fun</span> <span class="id">_</span> <span class="k">-&gt;</span> <span class="s">&quot;Hello World from Nancy F#&quot;</span><span class="pn">)</span>
 </code></pre></td>
 </tr>
 </table>
@@ -101,19 +110,19 @@ request doesn't require anything from the <code>DynamicDictionary</code> Nancy p
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">namespace</span> <span class="id">Tres</span>
 
-<span class="k">open</span> <span onmouseout="hideTip(event, 'fs7', 8)" onmouseover="showTip(event, 'fs7', 8)" class="id">Microsoft</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 9)" onmouseover="showTip(event, 'fs8', 9)" class="id">AspNetCore</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs9', 10)" onmouseover="showTip(event, 'fs9', 10)" class="id">Builder</span>
-<span class="k">open</span> <span onmouseout="hideTip(event, 'fs7', 11)" onmouseover="showTip(event, 'fs7', 11)" class="id">Microsoft</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs8', 12)" onmouseover="showTip(event, 'fs8', 12)" class="id">AspNetCore</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 13)" onmouseover="showTip(event, 'fs10', 13)" class="id">Hosting</span>
-<span class="k">open</span> <span onmouseout="hideTip(event, 'fs2', 14)" onmouseover="showTip(event, 'fs2', 14)" class="id">Nancy</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 15)" onmouseover="showTip(event, 'fs11', 15)" class="id">Owin</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs9', 10)" onmouseover="showTip(event, 'fs9', 10)" class="id">Microsoft</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 11)" onmouseover="showTip(event, 'fs10', 11)" class="id">AspNetCore</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs11', 12)" onmouseover="showTip(event, 'fs11', 12)" class="id">Builder</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs9', 13)" onmouseover="showTip(event, 'fs9', 13)" class="id">Microsoft</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs10', 14)" onmouseover="showTip(event, 'fs10', 14)" class="id">AspNetCore</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs12', 15)" onmouseover="showTip(event, 'fs12', 15)" class="id">Hosting</span>
+<span class="k">open</span> <span onmouseout="hideTip(event, 'fs4', 16)" onmouseover="showTip(event, 'fs4', 16)" class="id">Nancy</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs13', 17)" onmouseover="showTip(event, 'fs13', 17)" class="id">Owin</span>
 
-<span class="k">type</span> <span onmouseout="hideTip(event, 'fs12', 16)" onmouseover="showTip(event, 'fs12', 16)" class="id">Startup</span><span class="pn">(</span><span class="pn">)</span> <span class="o">=</span>
-  <span class="k">member</span> <span class="id">__</span><span class="pn">.</span><span class="id">Configure</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs13', 17)" onmouseover="showTip(event, 'fs13', 17)" class="id">app</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs14', 18)" onmouseover="showTip(event, 'fs14', 18)" class="id">IApplicationBuilder</span><span class="pn">)</span> <span class="o">=</span>
-    <span onmouseout="hideTip(event, 'fs13', 19)" onmouseover="showTip(event, 'fs13', 19)" class="id">app</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs15', 20)" onmouseover="showTip(event, 'fs15', 20)" class="id">UseOwin</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs16', 21)" onmouseover="showTip(event, 'fs16', 21)" class="id">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs16', 22)" onmouseover="showTip(event, 'fs16', 22)" class="id">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 23)" onmouseover="showTip(event, 'fs17', 23)" class="id">UseNancy</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs18', 24)" onmouseover="showTip(event, 'fs18', 24)" class="id">x</span> <span class="k">-&gt;</span> <span class="pn">(</span><span class="pn">)</span><span class="pn">)</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs19', 25)" onmouseover="showTip(event, 'fs19', 25)" class="id">ignore</span><span class="pn">)</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs19', 26)" onmouseover="showTip(event, 'fs19', 26)" class="id">ignore</span>
+<span class="k">type</span> <span onmouseout="hideTip(event, 'fs14', 18)" onmouseover="showTip(event, 'fs14', 18)" class="id">Startup</span><span class="pn">(</span><span class="pn">)</span> <span class="o">=</span>
+  <span class="k">member</span> <span class="id">__</span><span class="pn">.</span><span class="id">Configure</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs15', 19)" onmouseover="showTip(event, 'fs15', 19)" class="id">app</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs16', 20)" onmouseover="showTip(event, 'fs16', 20)" class="id">IApplicationBuilder</span><span class="pn">)</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs15', 21)" onmouseover="showTip(event, 'fs15', 21)" class="id">app</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs17', 22)" onmouseover="showTip(event, 'fs17', 22)" class="id">UseOwin</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs18', 23)" onmouseover="showTip(event, 'fs18', 23)" class="id">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs18', 24)" onmouseover="showTip(event, 'fs18', 24)" class="id">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs19', 25)" onmouseover="showTip(event, 'fs19', 25)" class="id">UseNancy</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs20', 26)" onmouseover="showTip(event, 'fs20', 26)" class="id">x</span> <span class="k">-&gt;</span> <span class="pn">(</span><span class="pn">)</span><span class="pn">)</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs21', 27)" onmouseover="showTip(event, 'fs21', 27)" class="id">ignore</span><span class="pn">)</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs21', 28)" onmouseover="showTip(event, 'fs21', 28)" class="id">ignore</span>
 
-<span class="k">module</span> <span onmouseout="hideTip(event, 'fs20', 27)" onmouseover="showTip(event, 'fs20', 27)" class="id">App</span> <span class="o">=</span> 
-  <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs21', 28)" onmouseover="showTip(event, 'fs21', 28)" class="id">EntryPoint</span><span class="pn">&gt;]</span>
-  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs22', 29)" onmouseover="showTip(event, 'fs22', 29)" class="id">main</span> <span onmouseout="hideTip(event, 'fs23', 30)" onmouseover="showTip(event, 'fs23', 30)" class="id">argv</span> <span class="o">=</span> 
-    <span class="k">use</span> <span onmouseout="hideTip(event, 'fs24', 31)" onmouseover="showTip(event, 'fs24', 31)" class="id">host</span> <span class="o">=</span> <span class="pn">(</span><span class="k">new</span> <span onmouseout="hideTip(event, 'fs25', 32)" onmouseover="showTip(event, 'fs25', 32)" class="id">WebHostBuilder</span><span class="pn">(</span><span class="pn">)</span><span class="pn">)</span><span class="pn">.</span><span class="id">UseKestrel</span><span class="pn">(</span><span class="pn">)</span><span class="pn">.</span><span class="id">UseStartup</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs12', 33)" onmouseover="showTip(event, 'fs12', 33)" class="id">Startup</span><span class="pn">&gt;</span><span class="pn">(</span><span class="pn">)</span><span class="pn">.</span><span class="id">Build</span> <span class="pn">(</span><span class="pn">)</span>
-    <span onmouseout="hideTip(event, 'fs24', 34)" onmouseover="showTip(event, 'fs24', 34)" class="id">host</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs26', 35)" onmouseover="showTip(event, 'fs26', 35)" class="id">Run</span> <span class="pn">(</span><span class="pn">)</span>
+<span class="k">module</span> <span onmouseout="hideTip(event, 'fs22', 29)" onmouseover="showTip(event, 'fs22', 29)" class="id">App</span> <span class="o">=</span> 
+  <span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs23', 30)" onmouseover="showTip(event, 'fs23', 30)" class="id">EntryPoint</span><span class="pn">&gt;]</span>
+  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs24', 31)" onmouseover="showTip(event, 'fs24', 31)" class="id">main</span> <span onmouseout="hideTip(event, 'fs25', 32)" onmouseover="showTip(event, 'fs25', 32)" class="id">argv</span> <span class="o">=</span> 
+    <span class="k">use</span> <span onmouseout="hideTip(event, 'fs26', 33)" onmouseover="showTip(event, 'fs26', 33)" class="id">host</span> <span class="o">=</span> <span class="pn">(</span><span class="k">new</span> <span onmouseout="hideTip(event, 'fs27', 34)" onmouseover="showTip(event, 'fs27', 34)" class="id">WebHostBuilder</span><span class="pn">(</span><span class="pn">)</span><span class="pn">)</span><span class="pn">.</span><span class="id">UseKestrel</span><span class="pn">(</span><span class="pn">)</span><span class="pn">.</span><span class="id">UseStartup</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs14', 35)" onmouseover="showTip(event, 'fs14', 35)" class="id">Startup</span><span class="pn">&gt;</span><span class="pn">(</span><span class="pn">)</span><span class="pn">.</span><span class="id">Build</span> <span class="pn">(</span><span class="pn">)</span>
+    <span onmouseout="hideTip(event, 'fs26', 36)" onmouseover="showTip(event, 'fs26', 36)" class="id">host</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs28', 37)" onmouseover="showTip(event, 'fs28', 37)" class="id">Run</span> <span class="pn">(</span><span class="pn">)</span>
     <span class="n">0</span>
 </code></pre></td>
 </tr>
@@ -149,32 +158,34 @@ other, but we have yet to tell the compiler about them, or how they should be or
 and you don't have to provide a variable assignment for every call. In F#, you would either need to provide that, or
 pipe the output (<code>|&gt;</code>) to <code>ignore</code>.</p>
 
-<div class="tip" id="fs1">namespace Tres</div>
-<div class="tip" id="fs2">namespace Nancy</div>
-<div class="tip" id="fs3">Multiple items<br />type HomeModule =<br />&#160;&#160;inherit NancyModule<br />&#160;&#160;new : unit -&gt; HomeModule<br /><br />--------------------<br />new : unit -&gt; HomeModule</div>
-<div class="tip" id="fs4">val this : HomeModule</div>
-<div class="tip" id="fs5">Multiple items<br />type NancyModule =<br />&#160;&#160;member After : AfterPipeline with get, set<br />&#160;&#160;member Before : BeforePipeline with get, set<br />&#160;&#160;member Context : NancyContext with get, set<br />&#160;&#160;member Delete : path:string * action:Func&lt;obj, obj&gt; * ?condition:Func&lt;NancyContext, bool&gt; * ?name:string -&gt; unit + 5 overloads<br />&#160;&#160;member Get : path:string * action:Func&lt;obj, obj&gt; * ?condition:Func&lt;NancyContext, bool&gt; * ?name:string -&gt; unit + 5 overloads<br />&#160;&#160;member Head : path:string * action:Func&lt;obj, obj&gt; * ?condition:Func&lt;NancyContext, bool&gt; * ?name:string -&gt; unit + 5 overloads<br />&#160;&#160;member ModelBinderLocator : IModelBinderLocator with get, set<br />&#160;&#160;member ModelValidationResult : ModelValidationResult with get, set<br />&#160;&#160;member ModulePath : string with get, set<br />&#160;&#160;member Negotiate : Negotiator<br />&#160;&#160;...<br /><br />--------------------<br />NancyModule() : NancyModule<br />NancyModule(modulePath: string) : NancyModule</div>
-<div class="tip" id="fs6">NancyModule.Get&lt;&#39;T&gt;(path: string, action: System.Func&lt;obj,System.Threading.CancellationToken,System.Threading.Tasks.Task&lt;&#39;T&gt;&gt;,?condition: System.Func&lt;NancyContext,bool&gt;,?name: string) : unit<br />NancyModule.Get(path: string, action: System.Func&lt;obj,System.Threading.CancellationToken,System.Threading.Tasks.Task&lt;obj&gt;&gt;,?condition: System.Func&lt;NancyContext,bool&gt;,?name: string) : unit<br />NancyModule.Get&lt;&#39;T&gt;(path: string, action: System.Func&lt;obj,System.Threading.Tasks.Task&lt;&#39;T&gt;&gt;,?condition: System.Func&lt;NancyContext,bool&gt;,?name: string) : unit<br />NancyModule.Get(path: string, action: System.Func&lt;obj,System.Threading.Tasks.Task&lt;obj&gt;&gt;,?condition: System.Func&lt;NancyContext,bool&gt;,?name: string) : unit<br />NancyModule.Get&lt;&#39;T&gt;(path: string, action: System.Func&lt;obj,&#39;T&gt;,?condition: System.Func&lt;NancyContext,bool&gt;,?name: string) : unit<br />NancyModule.Get(path: string, action: System.Func&lt;obj,obj&gt;,?condition: System.Func&lt;NancyContext,bool&gt;,?name: string) : unit</div>
-<div class="tip" id="fs7">namespace Microsoft</div>
-<div class="tip" id="fs8">namespace Microsoft.AspNetCore</div>
-<div class="tip" id="fs9">namespace Microsoft.AspNetCore.Builder</div>
-<div class="tip" id="fs10">namespace Microsoft.AspNetCore.Hosting</div>
-<div class="tip" id="fs11">namespace Nancy.Owin</div>
-<div class="tip" id="fs12">Multiple items<br />type Startup =<br />&#160;&#160;new : unit -&gt; Startup<br />&#160;&#160;member Configure : app:IApplicationBuilder -&gt; unit<br /><br />--------------------<br />new : unit -&gt; Startup</div>
-<div class="tip" id="fs13">val app : IApplicationBuilder</div>
-<div class="tip" id="fs14">type IApplicationBuilder =<br />&#160;&#160;member ApplicationServices : IServiceProvider with get, set<br />&#160;&#160;member Build : unit -&gt; RequestDelegate<br />&#160;&#160;member New : unit -&gt; IApplicationBuilder<br />&#160;&#160;member Properties : IDictionary&lt;string, obj&gt;<br />&#160;&#160;member ServerFeatures : IFeatureCollection<br />&#160;&#160;member Use : middleware:Func&lt;RequestDelegate, RequestDelegate&gt; -&gt; IApplicationBuilder</div>
-<div class="tip" id="fs15">(extension) IApplicationBuilder.UseOwin() : System.Action&lt;System.Func&lt;System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;,System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;&gt;&gt;<br />(extension) IApplicationBuilder.UseOwin(pipeline: System.Action&lt;System.Action&lt;System.Func&lt;System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;,System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;&gt;&gt;&gt;) : IApplicationBuilder</div>
-<div class="tip" id="fs16">val x : System.Action&lt;System.Func&lt;System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;,System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;&gt;&gt;</div>
-<div class="tip" id="fs17">(extension) System.Action.UseNancy(action: System.Action&lt;NancyOptions&gt;) : System.Action&lt;System.Func&lt;System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;,System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;&gt;&gt;<br />(extension) System.Action.UseNancy(?options: NancyOptions) : System.Action&lt;System.Func&lt;System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;,System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;&gt;&gt;</div>
-<div class="tip" id="fs18">val x : NancyOptions</div>
-<div class="tip" id="fs19">val ignore : value:&#39;T -&gt; unit</div>
-<div class="tip" id="fs20">module App<br /><br />from Tres</div>
-<div class="tip" id="fs21">Multiple items<br />type EntryPointAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; EntryPointAttribute<br /><br />--------------------<br />new : unit -&gt; EntryPointAttribute</div>
-<div class="tip" id="fs22">val main : argv:string [] -&gt; int</div>
-<div class="tip" id="fs23">val argv : string []</div>
-<div class="tip" id="fs24">val host : IWebHost</div>
-<div class="tip" id="fs25">Multiple items<br />type WebHostBuilder =<br />&#160;&#160;new : unit -&gt; WebHostBuilder<br />&#160;&#160;member Build : unit -&gt; IWebHost<br />&#160;&#160;member ConfigureAppConfiguration : configureDelegate:Action&lt;WebHostBuilderContext, IConfigurationBuilder&gt; -&gt; IWebHostBuilder<br />&#160;&#160;member ConfigureServices : configureServices:Action&lt;IServiceCollection&gt; -&gt; IWebHostBuilder + 1 overload<br />&#160;&#160;member GetSetting : key:string -&gt; string<br />&#160;&#160;member UseSetting : key:string * value:string -&gt; IWebHostBuilder<br /><br />--------------------<br />WebHostBuilder() : WebHostBuilder</div>
-<div class="tip" id="fs26">(extension) IWebHost.Run() : unit</div>
+<div class="tip" id="fs1">Multiple items<br />namespace FSharp<br /><br />--------------------<br />namespace Microsoft.FSharp</div>
+<div class="tip" id="fs2">namespace Microsoft.FSharp.Core</div>
+<div class="tip" id="fs3">namespace Tres</div>
+<div class="tip" id="fs4">namespace Nancy</div>
+<div class="tip" id="fs5">Multiple items<br />type HomeModule =<br />&#160;&#160;inherit NancyModule<br />&#160;&#160;new : unit -&gt; HomeModule<br /><br />--------------------<br />new : unit -&gt; HomeModule</div>
+<div class="tip" id="fs6">val this : HomeModule</div>
+<div class="tip" id="fs7">Multiple items<br />type NancyModule =<br />&#160;&#160;member After : AfterPipeline with get, set<br />&#160;&#160;member Before : BeforePipeline with get, set<br />&#160;&#160;member Context : NancyContext with get, set<br />&#160;&#160;member Delete : path:string * action:Func&lt;obj, obj&gt; * ?condition:Func&lt;NancyContext, bool&gt; * ?name:string -&gt; unit + 5 overloads<br />&#160;&#160;member Get : path:string * action:Func&lt;obj, obj&gt; * ?condition:Func&lt;NancyContext, bool&gt; * ?name:string -&gt; unit + 5 overloads<br />&#160;&#160;member Head : path:string * action:Func&lt;obj, obj&gt; * ?condition:Func&lt;NancyContext, bool&gt; * ?name:string -&gt; unit + 5 overloads<br />&#160;&#160;member ModelBinderLocator : IModelBinderLocator with get, set<br />&#160;&#160;member ModelValidationResult : ModelValidationResult with get, set<br />&#160;&#160;member ModulePath : string with get, set<br />&#160;&#160;member Negotiate : Negotiator<br />&#160;&#160;...<br /><br />--------------------<br />NancyModule() : NancyModule<br />NancyModule(modulePath: string) : NancyModule</div>
+<div class="tip" id="fs8">NancyModule.Get&lt;&#39;T&gt;(path: string, action: System.Func&lt;obj,System.Threading.CancellationToken,System.Threading.Tasks.Task&lt;&#39;T&gt;&gt;,?condition: System.Func&lt;NancyContext,bool&gt;,?name: string) : unit<br />NancyModule.Get(path: string, action: System.Func&lt;obj,System.Threading.CancellationToken,System.Threading.Tasks.Task&lt;obj&gt;&gt;,?condition: System.Func&lt;NancyContext,bool&gt;,?name: string) : unit<br />NancyModule.Get&lt;&#39;T&gt;(path: string, action: System.Func&lt;obj,System.Threading.Tasks.Task&lt;&#39;T&gt;&gt;,?condition: System.Func&lt;NancyContext,bool&gt;,?name: string) : unit<br />NancyModule.Get(path: string, action: System.Func&lt;obj,System.Threading.Tasks.Task&lt;obj&gt;&gt;,?condition: System.Func&lt;NancyContext,bool&gt;,?name: string) : unit<br />NancyModule.Get&lt;&#39;T&gt;(path: string, action: System.Func&lt;obj,&#39;T&gt;,?condition: System.Func&lt;NancyContext,bool&gt;,?name: string) : unit<br />NancyModule.Get(path: string, action: System.Func&lt;obj,obj&gt;,?condition: System.Func&lt;NancyContext,bool&gt;,?name: string) : unit</div>
+<div class="tip" id="fs9">namespace Microsoft</div>
+<div class="tip" id="fs10">namespace Microsoft.AspNetCore</div>
+<div class="tip" id="fs11">namespace Microsoft.AspNetCore.Builder</div>
+<div class="tip" id="fs12">namespace Microsoft.AspNetCore.Hosting</div>
+<div class="tip" id="fs13">namespace Nancy.Owin</div>
+<div class="tip" id="fs14">Multiple items<br />type Startup =<br />&#160;&#160;new : unit -&gt; Startup<br />&#160;&#160;member Configure : app:IApplicationBuilder -&gt; unit<br /><br />--------------------<br />new : unit -&gt; Startup</div>
+<div class="tip" id="fs15">val app : IApplicationBuilder</div>
+<div class="tip" id="fs16">type IApplicationBuilder =<br />&#160;&#160;member ApplicationServices : IServiceProvider with get, set<br />&#160;&#160;member Build : unit -&gt; RequestDelegate<br />&#160;&#160;member New : unit -&gt; IApplicationBuilder<br />&#160;&#160;member Properties : IDictionary&lt;string, obj&gt;<br />&#160;&#160;member ServerFeatures : IFeatureCollection<br />&#160;&#160;member Use : middleware:Func&lt;RequestDelegate, RequestDelegate&gt; -&gt; IApplicationBuilder</div>
+<div class="tip" id="fs17">(extension) IApplicationBuilder.UseOwin() : System.Action&lt;System.Func&lt;System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;,System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;&gt;&gt;<br />(extension) IApplicationBuilder.UseOwin(pipeline: System.Action&lt;System.Action&lt;System.Func&lt;System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;,System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;&gt;&gt;&gt;) : IApplicationBuilder</div>
+<div class="tip" id="fs18">val x : System.Action&lt;System.Func&lt;System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;,System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;&gt;&gt;</div>
+<div class="tip" id="fs19">(extension) System.Action.UseNancy(action: System.Action&lt;NancyOptions&gt;) : System.Action&lt;System.Func&lt;System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;,System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;&gt;&gt;<br />(extension) System.Action.UseNancy(?options: NancyOptions) : System.Action&lt;System.Func&lt;System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;,System.Func&lt;System.Collections.Generic.IDictionary&lt;string,obj&gt;,System.Threading.Tasks.Task&gt;&gt;&gt;</div>
+<div class="tip" id="fs20">val x : NancyOptions</div>
+<div class="tip" id="fs21">val ignore : value:&#39;T -&gt; unit</div>
+<div class="tip" id="fs22">module App<br /><br />from Tres</div>
+<div class="tip" id="fs23">Multiple items<br />type EntryPointAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; EntryPointAttribute<br /><br />--------------------<br />new : unit -&gt; EntryPointAttribute</div>
+<div class="tip" id="fs24">val main : argv:string [] -&gt; int</div>
+<div class="tip" id="fs25">val argv : string []</div>
+<div class="tip" id="fs26">val host : IWebHost</div>
+<div class="tip" id="fs27">Multiple items<br />type WebHostBuilder =<br />&#160;&#160;new : unit -&gt; WebHostBuilder<br />&#160;&#160;member Build : unit -&gt; IWebHost<br />&#160;&#160;member ConfigureAppConfiguration : configureDelegate:Action&lt;WebHostBuilderContext, IConfigurationBuilder&gt; -&gt; IWebHostBuilder<br />&#160;&#160;member ConfigureServices : configureServices:Action&lt;IServiceCollection&gt; -&gt; IWebHostBuilder + 1 overload<br />&#160;&#160;member GetSetting : key:string -&gt; string<br />&#160;&#160;member UseSetting : key:string * value:string -&gt; IWebHostBuilder<br /><br />--------------------<br />WebHostBuilder() : WebHostBuilder</div>
+<div class="tip" id="fs28">(extension) IWebHost.Run() : unit</div>
 
         </div>
         <div class="span3">
@@ -183,18 +194,14 @@ pipe the output (<code>|&gt;</code>) to <code>ignore</code>.</p>
             <li class="nav-header">objects |> functions</li>
             <li><a href="/index.html">Home page</a></li>
             <li class="divider"></li>
-            
             <li><a href="https://github.com/bit-badger/o2f">Source Code on GitHub</a></li>
             <li><a href="/license.html">License</a></li>
-            
-            
+            <li class="divider"></li>
             <li class="nav-header">Steps</li>
             <li><a href="/step0.html"><strong>0 |> Environment</strong></a></li>
             <li><a href="/step1/"><strong>1 |> Hello World</strong></a></li>
             <li><a href="/step2"><strong>2 |> Data Model</strong></a></li>
-            
-
-            
+            <li><a href="/step3"><strong>3 |> RavenDB Connection</strong></a></li>
           </ul>
         </div>
       </div>

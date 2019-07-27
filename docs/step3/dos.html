@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>dos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="A working example to demonstrate to C# developers how F# can improve their workflow and performance"/>
+    <meta name="author" content="Daniel J. Summers"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+
+    <link type="text/css" rel="stylesheet" href="/content/style.css" />
+    <script type="text/javascript" src="/content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="https://github.com/bit-badger/o2f">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="/index.html">objects |> functions</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h3><a name="Dos-Step-3" class="anchor" href="#Dos-Step-3">Dos - Step 3</a></h3>
+<p>This step follows the same general path as <a href="./uno.html">Uno</a>; the main difference is in how we configure dependency injection. Go ahead and create the <code>O2F2</code> database using RavenDB Studio.</p>
+<h4><a name="Dependencies" class="anchor" href="#Dependencies">Dependencies</a></h4>
+<p>The only change we need here is to add the RavenDB client package to <code>paket.references</code>, then run <code>paket install</code>.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="id">RavenDb</span><span class="pn">.</span><span class="id">Client</span>
+</code></pre></td>
+</tr>
+</table>
+<p>We'll also bring across the entire <code>Data</code> directory we created in <strong>Uno</strong> during this step. We'll be able to use <code>Collection.cs</code> and the indexes as is (except for changing the namespace to <code>Dos.Data</code>).</p>
+<h4><a name="Configuring-the-Connection" class="anchor" href="#Configuring-the-Connection">Configuring the Connection</a></h4>
+<p>Since <code>appsettings.json</code> is a .NET Core thing, we will not use it here.  We can still use JSON to configure our connection, though; here's the <code>data-config.json</code> file:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip"><code lang="json">{
+  "Url": "http://localhost:8080",
+  "Database": "O2F2"
+}
+</code></pre></td></tr></table>
+<p>...and add the following to <code>Dos.csproj</code> so that the compiler will copy it to the output directory:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="xml"><span class="k">&lt;</span><span class="i">ItemGroup</span><span class="k">&gt;</span>
+    <span class="k">&lt;</span><span class="i">None</span> <span class="o">Update</span><span class="k">="data-config.json"</span><span class="k">&gt;</span>
+        <span class="k">&lt;</span><span class="i">CopyToOutputDirectory</span><span class="k">&gt;</span>Always<span class="k">&lt;/</span><span class="i">CopyToOutputDirectory</span><span class="k">&gt;</span>
+    <span class="k">&lt;/</span><span class="i">None</span><span class="k">&gt;</span>
+<span class="k">&lt;/</span><span class="i">ItemGroup</span><span class="k">&gt;</span>
+</code></pre></td></tr></table>
+<p>We'll also create a small POCO into which we can deserialize this JSON. Below is <code>Data/DataConfig.cs</code>:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp"><span class="k">using</span> Newtonsoft.Json;
+
+<span class="k">namespace</span> Dos.Data
+{
+    <span class="k">public</span> <span class="k">class</span> DataConfig
+    {
+        <span class="k">public</span> <span class="k">string</span> Url { get; set; }
+        <span class="k">public</span> <span class="k">string</span> Database { get; set; }
+
+        [JsonIgnore]
+        <span class="k">public</span> <span class="k">string</span>[] Urls <span class="o">=</span><span class="o">&gt;</span> <span class="k">new</span>[] { Url };
+    }
+}
+</code></pre></td></tr></table>
+<p><em>(<code>Urls</code> is just a convenience property to wrap the <code>Url</code> property as an array; the RavenDB client can take an array of URLs if the application needs to connect to a cluster of servers.)</em> Now we can read <code>data-config.json</code> in and get our settings from this class. But first, we'll need to make some other changes.</p>
+<h4><a name="Dependency-Injection" class="anchor" href="#Dependency-Injection">Dependency Injection</a></h4>
+<p>With Nancy, if you want to add forks to the SDHP, you have to provide a bootstrapper that will handle the startup code. For most purposes, the best way is to simply override <code>DefaultNancyBootstrapper</code>; that way, any code you don't provide will use the default, and you can call <code>base</code> methods from your overridden ones, so all the SDHP magic continues to work.</p>
+<p>Here's the custom bootstrapper we'll use:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+<span class="l">20: </span>
+<span class="l">21: </span>
+<span class="l">22: </span>
+<span class="l">23: </span>
+<span class="l">24: </span>
+<span class="l">25: </span>
+<span class="l">26: </span>
+<span class="l">27: </span>
+<span class="l">28: </span>
+<span class="l">29: </span>
+<span class="l">30: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp"><span class="k">using</span> Dos.Data;
+<span class="k">using</span> Dos.Data.Indexes;
+<span class="k">using</span> Nancy;
+<span class="k">using</span> Nancy.TinyIoc;
+<span class="k">using</span> Newtonsoft.Json;
+<span class="k">using</span> Raven.Client.Documents;
+<span class="k">using</span> Raven.Client.Documents.Indexes;
+<span class="k">using</span> System.IO;
+
+<span class="k">namespace</span> Dos
+{
+    <span class="k">class</span> DosBootstrapper <span class="o">:</span> DefaultNancyBootstrapper
+    {
+        <span class="k">public</span> DosBootstrapper() <span class="o">:</span> <span class="k">base</span>() { }
+
+        <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> ConfigureApplicationContainer(TinyIoCContainer container)
+        {
+            <span class="k">base</span>.ConfigureApplicationContainer(container);
+
+            <span class="k">var</span> cfg <span class="o">=</span> JsonConvert.DeserializeObject&lt;DataConfig&gt;(File.ReadAllText(<span class="s">"data-config.json"</span>));
+            <span class="k">var</span> store <span class="o">=</span> <span class="k">new</span> DocumentStore
+            {
+                Urls <span class="o">=</span> cfg.Urls,
+                Database <span class="o">=</span> cfg.Database
+            };
+            container.Register(store.Initialize());
+            IndexCreation.CreateIndexes(<span class="k">typeof</span>(Categories_ByWebLogIdAndSlug).Assembly, store);
+        }
+    }
+}
+</code></pre></td></tr></table>
+<p>This is a bit different from the ASP.NET Core implementation. We do our own configuration, through reading files and deserializing JSON, instead of relying on the different file and environment options we did in <strong>Uno</strong>. The <code>IDocumentStore</code> initialization is similar, though, and <code>container.Register</code> is how we register the singleton with Nancy's DI container. Finally, the index creation is exactly the same.</p>
+<p>What is different, though, is that in <strong>Uno</strong>, all that went in <code>Startup.cs</code>. We do still need to make a change to that file, though, so it will know to use our custom bootstrapper instead of Nancy's default one. This looks like:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp"><span class="k">public</span> <span class="k">void</span> Configure(IApplicationBuilder app) <span class="o">=</span><span class="o">&gt;</span>
+    app.UseOwin(x <span class="o">=</span><span class="o">&gt;</span> x.UseNancy(options <span class="o">=</span><span class="o">&gt;</span> options.Bootstrapper <span class="o">=</span> <span class="k">new</span> DosBootstrapper()));
+</code></pre></td></tr></table>
+<p>At this point, you should be able to <code>dotnet run</code> and, once the console says that it's listening, you should be able to see the indexes in the <code>O2F2</code> database.</p>
+<hr />
+<p><a href="../step3">Back to Step 3</a></p>
+
+
+        </div>
+        <div class="span3">
+          <img src="/img/logo.png" alt="F# Project" style="width:150px;margin:10px" />  
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">objects |> functions</li>
+            <li><a href="/index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="https://github.com/bit-badger/o2f">Source Code on GitHub</a></li>
+            <li><a href="/license.html">License</a></li>
+            <li class="divider"></li>
+            <li class="nav-header">Steps</li>
+            <li><a href="/step0.html"><strong>0 |> Environment</strong></a></li>
+            <li><a href="/step1/"><strong>1 |> Hello World</strong></a></li>
+            <li><a href="/step2"><strong>2 |> Data Model</strong></a></li>
+            <li><a href="/step3"><strong>3 |> RavenDB Connection</strong></a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="https://github.com/bit-badger/o2f"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+  </body>
+  </html>

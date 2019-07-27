@@ -97,7 +97,7 @@ RavenDB Studio allows us to view index definitions, and in viewing the indexes f
 definitions were text versions of the functional equivalent of our LINQ query (`xs.Select(x => new { .. })` instead of
 `from x in xs select new { ... }`). So, while RavenDB does provide a mechanism to describe indexes in JavaScript (and,
 if you are so inclined,
-[read up about it on their docs](https://ravendb.net/docs/article-page/4.2/csharp/indexes/javascript-indexes)), we will
+[read all about it on their docs](https://ravendb.net/docs/article-page/4.2/csharp/indexes/javascript-indexes)), we will
 use it to specify the same indexes we've already designed.
 
 Here's a look at our example index, utilizing the `AbstractJavaScriptIndexCreationTask`:
@@ -116,10 +116,15 @@ type Categories_ByWebLogIdAndSlug () as this =
         })"
         ]
 (**
+> F# 4.7 should be bringing the `nameof` operator that C# has had for a while. When this operator arrives, we could use
+> it to create this string, which would serve as an access of the field, enabling it to show up when looking for all the
+> places it is used. For now, though, we'll have to remember to check these indexes if we decide to start renaming
+> things.
+
 #### Dependency Injection
 
 We'll do the same thing we did for **Dos** - override `DefaultNancyBootstrapper` and register our connection there.
-We'll do all of this in `App.fs`. We will need some additional `using` statements:
+We'll do all of this in `App.fs`. We will need some additional `open` statements:
 
     [lang=fsharp]
     open Indexes

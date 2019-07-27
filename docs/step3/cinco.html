@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>cinco</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="A working example to demonstrate to C# developers how F# can improve their workflow and performance"/>
+    <meta name="author" content="Daniel J. Summers"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+
+    <link type="text/css" rel="stylesheet" href="/content/style.css" />
+    <script type="text/javascript" src="/content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="https://github.com/bit-badger/o2f">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="/index.html">objects |> functions</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h3><a name="Cinco-Step-3" class="anchor" href="#Cinco-Step-3">Cinco - Step 3</a></h3>
+<p>As with our previous versions, we need to add <code>RavenDb.Client</code> to <code>paket.references</code>, and we'll also need
+<code>Microsoft.FSharpLu.Json</code>; run <code>paket install</code> after those are added. We'll also utilize the following files from prior
+projects:</p>
+<ul>
+<li><code>data-config.json</code> from <strong>Tres</strong>, changing the database to <code>O2F5</code>;</li>
+<li><code>Data.fs</code> from <strong>Tres</strong> (changes described below); and</li>
+<li><code>Collection.fs</code>, <code>Domain.fs</code>, and <code>Indexes.fs</code> from <strong>Quatro</strong>, changing the module namespaces to <code>Cinco</code>.</li>
+</ul>
+<p>The section of <code>Cinco.fsproj</code> that specifies the build order should look like this:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="xml"><span class="k">&lt;</span><span class="i">ItemGroup</span><span class="k">&gt;</span>
+  <span class="k">&lt;</span><span class="i">Compile</span> <span class="o">Include</span><span class="k">="Collection.fs"</span> <span class="k">/&gt;</span>
+  <span class="k">&lt;</span><span class="i">Compile</span> <span class="o">Include</span><span class="k">="Domain.fs"</span> <span class="k">/&gt;</span>
+  <span class="k">&lt;</span><span class="i">Compile</span> <span class="o">Include</span><span class="k">="Indexes.fs"</span> <span class="k">/&gt;</span>
+  <span class="k">&lt;</span><span class="i">Compile</span> <span class="o">Include</span><span class="k">="Data.fs"</span> <span class="k">/&gt;</span>
+  <span class="k">&lt;</span><span class="i">Compile</span> <span class="o">Include</span><span class="k">="App.fs"</span> <span class="k">/&gt;</span>
+  <span class="k">&lt;</span><span class="i">Content</span> <span class="o">Include</span><span class="k">="data-config.json"</span><span class="k">&gt;</span>
+    <span class="k">&lt;</span><span class="i">CopyToOutputDirectory</span><span class="k">&gt;</span>Always<span class="k">&lt;/</span><span class="i">CopyToOutputDirectory</span><span class="k">&gt;</span>
+  <span class="k">&lt;/</span><span class="i">Content</span><span class="k">&gt;</span>
+<span class="k">&lt;/</span><span class="i">ItemGroup</span><span class="k">&gt;</span>
+</code></pre></td></tr></table>
+<h3><a name="Parsing-and-More" class="anchor" href="#Parsing-and-More">Parsing <code>data.config</code> (and More)</a></h3>
+<p>Up to this point, we've used JSON.Net to parse <code>data-config.json</code>. There's nothing wrong with that approach, but we'll
+implement our JSON parsing a different way in this project, using a library from the same people who bring us Freya
+called <a href="https://xyncro.tech/chiron/">Chiron</a> (pronounced "KY-ron"). Of course, to be able to use it, we have to pull it
+in as a dependency. Add <code>nuget Chiron</code> to <code>paket.dependencies</code>, add <code>Chiron</code> to <code>paket.references</code>, and run
+<code>paket install</code>.</p>
+<p>We'll utilize a discriminated union to declare the supported parameters we allow to be set. Open <code>Data.fs</code>, change the
+first line to <code>module Cinco.Data</code>, and delete the <code>Collection</code> module (we included that in another file). Then, we'll
+add a DU with our expected parameters.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">  <span class="k">open</span> <span onmouseout="hideTip(event, 'fs15', 16)" onmouseover="showTip(event, 'fs15', 16)" class="id">Chiron</span>
+  <span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 17)" onmouseover="showTip(event, 'fs1', 17)" class="id">Raven</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs2', 18)" onmouseover="showTip(event, 'fs2', 18)" class="id">Client</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs3', 19)" onmouseover="showTip(event, 'fs3', 19)" class="id">Documents</span>
+
+  <span class="k">type</span> <span onmouseout="hideTip(event, 'fs16', 20)" onmouseover="showTip(event, 'fs16', 20)" class="rt">ConfigParameter</span> <span class="o">=</span>
+    <span class="pn">|</span> <span onmouseout="hideTip(event, 'fs17', 21)" onmouseover="showTip(event, 'fs17', 21)" class="uc">Url</span>      <span class="k">of</span> <span onmouseout="hideTip(event, 'fs13', 22)" onmouseover="showTip(event, 'fs13', 22)" class="rt">string</span>
+    <span class="pn">|</span> <span onmouseout="hideTip(event, 'fs18', 23)" onmouseover="showTip(event, 'fs18', 23)" class="uc">Database</span> <span class="k">of</span> <span onmouseout="hideTip(event, 'fs13', 24)" onmouseover="showTip(event, 'fs13', 24)" class="rt">string</span>
+</code></pre></td>
+</tr>
+</table>
+<p>We've seen DUs like this already; however, with this definition, our <code>DataConfig</code> record now becomes dead simple:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">  <span class="k">type</span> <span onmouseout="hideTip(event, 'fs19', 25)" onmouseover="showTip(event, 'fs19', 25)" class="rt">DataConfig</span> <span class="o">=</span> <span class="pn">{</span> <span onmouseout="hideTip(event, 'fs20', 26)" onmouseover="showTip(event, 'fs20', 26)" class="id">Parameters</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs16', 27)" onmouseover="showTip(event, 'fs16', 27)" class="rt">ConfigParameter</span> <span onmouseout="hideTip(event, 'fs21', 28)" onmouseover="showTip(event, 'fs21', 28)" class="rt">list</span> <span class="pn">}</span>
+</code></pre></td>
+</tr>
+</table>
+<p>We'll make a module to let us parse this using Chiron. In the module, we'll also include code to configure RavenDB's
+<code>DocumentStore</code> object from the configuration.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">  <span class="k">module</span> <span onmouseout="hideTip(event, 'fs19', 29)" onmouseover="showTip(event, 'fs19', 29)" class="m">DataConfig</span> <span class="o">=</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs22', 30)" onmouseover="showTip(event, 'fs22', 30)" class="fn">fromJson</span> <span onmouseout="hideTip(event, 'fs23', 31)" onmouseover="showTip(event, 'fs23', 31)" class="id">json</span> <span class="o">=</span>
+      <span class="k">match</span> <span onmouseout="hideTip(event, 'fs24', 32)" onmouseover="showTip(event, 'fs24', 32)" class="m">Json</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs25', 33)" onmouseover="showTip(event, 'fs25', 33)" class="id">parse</span> <span onmouseout="hideTip(event, 'fs23', 34)" onmouseover="showTip(event, 'fs23', 34)" class="id">json</span> <span class="k">with</span>
+      <span class="pn">|</span> <span onmouseout="hideTip(event, 'fs26', 35)" onmouseover="showTip(event, 'fs26', 35)" class="uc">Object</span> <span onmouseout="hideTip(event, 'fs27', 36)" onmouseover="showTip(event, 'fs27', 36)" class="id">config</span> <span class="k">-&gt;</span>
+          <span class="pn">{</span> <span class="id">Parameters</span> <span class="o">=</span>
+              <span onmouseout="hideTip(event, 'fs27', 37)" onmouseover="showTip(event, 'fs27', 37)" class="id">config</span>
+              <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs28', 38)" onmouseover="showTip(event, 'fs28', 38)" class="m">Map</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs29', 39)" onmouseover="showTip(event, 'fs29', 39)" class="id">toList</span>
+              <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 40)" onmouseover="showTip(event, 'fs30', 40)" class="m">List</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs31', 41)" onmouseover="showTip(event, 'fs31', 41)" class="id">map</span> <span class="pn">(</span><span class="k">fun</span> <span onmouseout="hideTip(event, 'fs32', 42)" onmouseover="showTip(event, 'fs32', 42)" class="id">item</span> <span class="k">-&gt;</span>
+                  <span class="k">match</span> <span onmouseout="hideTip(event, 'fs32', 43)" onmouseover="showTip(event, 'fs32', 43)" class="id">item</span> <span class="k">with</span>
+                  <span class="pn">|</span> <span class="s">&quot;Url&quot;</span><span class="pn">,</span>      <span onmouseout="hideTip(event, 'fs33', 44)" onmouseover="showTip(event, 'fs33', 44)" class="uc">String</span> <span onmouseout="hideTip(event, 'fs34', 45)" onmouseover="showTip(event, 'fs34', 45)" class="id">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs17', 46)" onmouseover="showTip(event, 'fs17', 46)" class="uc">Url</span> <span onmouseout="hideTip(event, 'fs34', 47)" onmouseover="showTip(event, 'fs34', 47)" class="id">x</span>
+                  <span class="pn">|</span> <span class="s">&quot;Database&quot;</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs33', 48)" onmouseover="showTip(event, 'fs33', 48)" class="uc">String</span> <span onmouseout="hideTip(event, 'fs34', 49)" onmouseover="showTip(event, 'fs34', 49)" class="id">x</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs18', 50)" onmouseover="showTip(event, 'fs18', 50)" class="uc">Database</span> <span onmouseout="hideTip(event, 'fs34', 51)" onmouseover="showTip(event, 'fs34', 51)" class="id">x</span>
+                  <span class="pn">|</span> <span onmouseout="hideTip(event, 'fs35', 52)" onmouseover="showTip(event, 'fs35', 52)" class="id">key</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs36', 53)" onmouseover="showTip(event, 'fs36', 53)" class="id">value</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs37', 54)" onmouseover="showTip(event, 'fs37', 54)" class="fn">invalidOp</span> <span class="o">&lt;|</span> <span onmouseout="hideTip(event, 'fs38', 55)" onmouseover="showTip(event, 'fs38', 55)" class="fn">sprintf</span> <span class="s">&quot;Unexpected RavenDB config parameter </span><span class="pf">%s</span><span class="s"> (value </span><span class="pf">%A</span><span class="s">)&quot;</span> <span class="id">key</span> <span onmouseout="hideTip(event, 'fs36', 56)" onmouseover="showTip(event, 'fs36', 56)" class="id">value</span><span class="pn">)</span>
+            <span class="pn">}</span>
+      <span class="pn">|</span> <span class="id">_</span> <span class="k">-&gt;</span> <span class="pn">{</span> <span class="id">Parameters</span> <span class="o">=</span> <span class="pn">[</span><span class="pn">]</span> <span class="pn">}</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Before we continue, let's take a look at this; there are several new concepts here.</p>
+<ul>
+<li>
+In other versions, if the JSON didn't parse, we raised an exception, but that was about it. In this one, if the JSON
+doesn't parse, we get a configuration that will end up making no changes to the default <code>DocumentStore</code> (which will fail
+on connect, because we haven't specified any URLs). Maybe this is better, maybe not, but it demonstrates that there is a
+way to handle bad JSON other than an exception.
+</li>
+<li>
+<code>Object</code> and <code>String</code> (and <code>Number</code>, though we don't have any) are Chiron types (cases of a DU, actually), so our
+<code>match</code> statement uses the destructuring form to "unwrap" the DU's inner value.
+</li>
+<li>
+This version will raise an exception if we attempt to set an option that we do not recognize (something like
+"Databsae" - not that anyone I know would ever type it like that...).
+</li>
+</ul>
+<p>So, it's more code than <code>JsonConvert.fromJson</code>, but it gives us control over the deserialization. If we get an
+unexpected parameter, our exception tells what that parameter is. We could also write this in such a way as to raise an
+exception if the parsed JSON doesn't include a <code>Url</code> parameter. And, while the parsing of JSON is still in a black box,
+how we handle each value is not.</p>
+<p>Moving on to configuring the <code>DocumentStore</code>:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs39', 57)" onmouseover="showTip(event, 'fs39', 57)" class="fn">configureStore</span> <span onmouseout="hideTip(event, 'fs40', 58)" onmouseover="showTip(event, 'fs40', 58)" class="id">config</span> <span onmouseout="hideTip(event, 'fs41', 59)" onmouseover="showTip(event, 'fs41', 59)" class="id">store</span>  <span class="o">=</span>
+      <span onmouseout="hideTip(event, 'fs40', 60)" onmouseover="showTip(event, 'fs40', 60)" class="id">config</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs20', 61)" onmouseover="showTip(event, 'fs20', 61)" class="id">Parameters</span>
+      <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs30', 62)" onmouseover="showTip(event, 'fs30', 62)" class="m">List</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs42', 63)" onmouseover="showTip(event, 'fs42', 63)" class="id">fold</span>
+          <span class="pn">(</span><span class="k">fun</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs43', 64)" onmouseover="showTip(event, 'fs43', 64)" class="id">stor</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs44', 65)" onmouseover="showTip(event, 'fs44', 65)" class="d">DocumentStore</span><span class="pn">)</span> <span onmouseout="hideTip(event, 'fs45', 66)" onmouseover="showTip(event, 'fs45', 66)" class="id">par</span> <span class="k">-&gt;</span> 
+              <span class="k">match</span> <span onmouseout="hideTip(event, 'fs45', 67)" onmouseover="showTip(event, 'fs45', 67)" class="id">par</span> <span class="k">with</span>
+              <span class="pn">|</span> <span onmouseout="hideTip(event, 'fs17', 68)" onmouseover="showTip(event, 'fs17', 68)" class="uc">Url</span> <span onmouseout="hideTip(event, 'fs46', 69)" onmouseover="showTip(event, 'fs46', 69)" class="id">url</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs43', 70)" onmouseover="showTip(event, 'fs43', 70)" class="id">stor</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs47', 71)" onmouseover="showTip(event, 'fs47', 71)" class="id">Urls</span> <span class="k">&lt;-</span> <span class="pn">[|</span> <span onmouseout="hideTip(event, 'fs46', 72)" onmouseover="showTip(event, 'fs46', 72)" class="id">url</span> <span class="pn">|]</span><span class="pn">;</span> <span onmouseout="hideTip(event, 'fs43', 73)" onmouseover="showTip(event, 'fs43', 73)" class="id">stor</span>
+              <span class="pn">|</span> <span onmouseout="hideTip(event, 'fs18', 74)" onmouseover="showTip(event, 'fs18', 74)" class="uc">Database</span> <span onmouseout="hideTip(event, 'fs48', 75)" onmouseover="showTip(event, 'fs48', 75)" class="id">db</span> <span class="k">-&gt;</span> <span onmouseout="hideTip(event, 'fs43', 76)" onmouseover="showTip(event, 'fs43', 76)" class="id">stor</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs49', 77)" onmouseover="showTip(event, 'fs49', 77)" class="id">Database</span> <span class="k">&lt;-</span> <span onmouseout="hideTip(event, 'fs48', 78)" onmouseover="showTip(event, 'fs48', 78)" class="id">db</span><span class="pn">;</span> <span onmouseout="hideTip(event, 'fs43', 79)" onmouseover="showTip(event, 'fs43', 79)" class="id">stor</span><span class="pn">)</span>
+          <span onmouseout="hideTip(event, 'fs41', 80)" onmouseover="showTip(event, 'fs41', 80)" class="id">store</span>
+</code></pre></td>
+</tr>
+</table>
+<p>This demonstrates a powerful concept in functional programming (not just F#), the <code>fold</code> function. All F# collection
+types' modules define <code>fold</code> for them (and, though the parameter order is different, LINQ defines a similar extension
+method on the <code>IEnumerable</code> types called <code>Aggregate</code> - you can even use this concept in C# and VB.NET). The concept
+behind a <code>fold</code> is not terribly difficult to grasp:</p>
+<ul>
+<li>
+Start with a known state; in our case, when we call this, the <code>store</code> parameter will be called with
+<code>new DocumentStore ()</code>.
+</li>
+<li>
+For each item in the collection, you run it through the function, producing a new state. Since <code>DocumentStore</code> is a
+.NET class, we mutate one of its properties (depending on what parameter we're processing), and return the same object.
+It doesn't have to be the same object, it just has to be the same type.
+</li>
+<li>The result is the modified state.</li>
+</ul>
+<p>In F# terms, the signature is <code>('State -&gt; 'T -&gt; 'State) -&gt; 'State -&gt; 'T list -&gt; 'State</code>. The function just below
+<code>List.fold</code> has the signature of the first function; <code>stor</code> is our state, and <code>par</code> is the parameter we're processing.
+We pass <code>store</code> as the second parameter, and use the <code>|&gt;</code> operator to provide the collection. One advantage to composing
+it this way is that the compiler can determine the type of <code>'T</code>, so we do not have to specify it. We could include
+<code>config.Parameters</code> as the last parameter to <code>List.fold</code>, but we'd have to define the type for <code>par</code>, as the compiler
+could not infer it.</p>
+<p>Why would you want to write this in this way? Let's remember what <code>App.fs</code> looked like in <strong>Quatro</strong>:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">let</span> <span onmouseout="hideTip(event, 'fs50', 81)" onmouseover="showTip(event, 'fs50', 81)" class="id">config</span> <span class="o">=</span> <span class="id">svc</span><span class="pn">.</span><span class="id">BuildServiceProvider</span><span class="pn">(</span><span class="pn">)</span><span class="pn">.</span><span class="id">GetRequiredService</span><span class="pn">&lt;</span><span class="id">IConfiguration</span><span class="pn">&gt;</span> <span class="pn">(</span><span class="pn">)</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs51', 82)" onmouseover="showTip(event, 'fs51', 82)" class="id">cfg</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs50', 83)" onmouseover="showTip(event, 'fs50', 83)" class="id">config</span><span class="pn">.</span><span class="id">GetSection</span> <span class="s">&quot;RavenDB&quot;</span>
+<span class="k">let</span> <span onmouseout="hideTip(event, 'fs52', 84)" onmouseover="showTip(event, 'fs52', 84)" class="id">store</span> <span class="o">=</span> <span class="k">new</span> <span class="id">DocumentStore</span> <span class="pn">(</span><span class="id">Urls</span> <span class="o">=</span> <span class="pn">[|</span> <span onmouseout="hideTip(event, 'fs51', 85)" onmouseover="showTip(event, 'fs51', 85)" class="id">cfg</span><span class="pn">.</span><span class="pn">[</span><span class="s">&quot;Url&quot;</span><span class="pn">]</span> <span class="pn">|]</span><span class="pn">,</span> <span class="id">Database</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs51', 86)" onmouseover="showTip(event, 'fs51', 86)" class="id">cfg</span><span class="pn">.</span><span class="pn">[</span><span class="s">&quot;Database&quot;</span><span class="pn">]</span><span class="pn">)</span>
+<span onmouseout="hideTip(event, 'fs52', 87)" onmouseover="showTip(event, 'fs52', 87)" class="id">store</span><span class="pn">.</span><span class="id">Conventions</span><span class="pn">.</span><span class="id">CustomizeJsonDeserializer</span> <span class="k">&lt;-</span>
+  <span class="k">fun</span> <span class="id">x</span> <span class="k">-&gt;</span>
+      <span class="id">x</span><span class="pn">.</span><span class="id">Converters</span><span class="pn">.</span><span class="id">Add</span> <span class="pn">(</span><span class="id">CompactUnionJsonConverter</span> <span class="pn">(</span><span class="pn">)</span><span class="pn">)</span>
+<span class="id">svc</span><span class="pn">.</span><span class="id">AddSingleton</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs52', 88)" onmouseover="showTip(event, 'fs52', 88)" class="id">store</span><span class="pn">.</span><span class="id">Initialize</span> <span class="pn">(</span><span class="pn">)</span><span class="pn">)</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs53', 89)" onmouseover="showTip(event, 'fs53', 89)" class="fn">ignore</span>
+</code></pre></td>
+</tr>
+</table>
+<p>While we won't be adding it to a DI container, the code from <strong>Quatro</strong> is procedural code; build the provider, get the
+section, create the store, add the serializer - it's a step-by-step how-to guide for getting from zero to an initialized
+connection. Conversely, <code>configureStore</code> is a description of the transformation that will be applied to a new store, one
+of the hallmarks of functional thinking. Within functional programming, a "pure" function is one that has no side
+effects; every time it is called with the same input, it produces the same return value, and does not rely on nor change
+anything else. While some may not consider <code>configureStore</code> a pure function due to its use of mutation, from a logic
+standpoint it is, as it will always make the same changes to whatever <code>DocumentStore</code> is passed. It's an isolated
+transformation.</p>
+<p>Speaking of thinking functionally - time to replace our DI container!</p>
+<h4><a name="Dependency-Injection-with-Functional-Style" class="anchor" href="#Dependency-Injection-with-Functional-Style">Dependency Injection with Functional Style</a></h4>
+<p>One of the concepts that dependency injection is said to implement is "inversion of control;" rather than an object
+compiling and linking a dependency at compile time, it compiles against an interface, and the concrete implementation
+is provided at runtime. (This is a bit of an oversimplification, but it's the basic gist.) If you've ever done
+non-DI/non-IoC work, and learned DI, you've adjusted your thinking from "what do I need" to "what will I need". In the
+functional world, this is done through a concept called the <strong><code>Reader</code> monad</strong>. The basic concept is as follows:</p>
+<ul>
+<li>We have a set of dependencies that we establish and set up in our code.</li>
+<li>We a process with a dependency that we want to be injected (in our case, our <code>IDocumentStore</code> is one such dependency).</li>
+<li>
+We construct a function that requires this dependency, and returns the result we seek. Though we won't see it in this
+step, it's easy to imagine a function that requires an <code>IDocumentStore</code> and returns a <code>Post</code>.
+</li>
+<li>We create a function that, given our set of dependencies, will extract the one we need for this process.</li>
+<li>
+We run our dependencies through the extraction function, to the dependent function, which takes the dependency and
+returns the result.
+</li>
+</ul>
+<p>Confused yet? Me too - let's look at code instead. Let's create <code>Dependencies.fs</code> and add it to the build order above
+<code>Domain.fs</code>. This write-up won't expound on every line in this file, but we'll hit the highlights to see how all
+this comes together. <code>ReaderM</code> is a generic class, where the first type is the dependency we need, and the second type
+is the type of our result.</p>
+<p>After that (which will come back to in a bit), we'll create our dependencies, and a function to extract an
+<code>IDocumentStore</code> from it.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+<span class="l">9: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 113)" onmouseover="showTip(event, 'fs1', 113)" class="id">Raven</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs2', 114)" onmouseover="showTip(event, 'fs2', 114)" class="id">Client</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs3', 115)" onmouseover="showTip(event, 'fs3', 115)" class="id">Documents</span>
+
+<span class="k">type</span> <span onmouseout="hideTip(event, 'fs68', 116)" onmouseover="showTip(event, 'fs68', 116)" class="if">IDependencies</span> <span class="o">=</span>
+  <span class="k">abstract</span> <span class="prop">Store</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs69', 117)" onmouseover="showTip(event, 'fs69', 117)" class="if">IDocumentStore</span>
+
+<span class="pn">[&lt;</span><span onmouseout="hideTip(event, 'fs70', 118)" onmouseover="showTip(event, 'fs70', 118)" class="rt">AutoOpen</span><span class="pn">&gt;]</span>
+<span class="k">module</span> <span class="m">DependencyExtraction</span> <span class="o">=</span>
+  
+  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs71', 119)" onmouseover="showTip(event, 'fs71', 119)" class="fn">getStore</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs72', 120)" onmouseover="showTip(event, 'fs72', 120)" class="id">deps</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs68', 121)" onmouseover="showTip(event, 'fs68', 121)" class="if">IDependencies</span><span class="pn">)</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs72', 122)" onmouseover="showTip(event, 'fs72', 122)" class="id">deps</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs73', 123)" onmouseover="showTip(event, 'fs73', 123)" class="id">Store</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Our <code>IDependencies</code> are pretty lean right now, but that's OK; we'll flesh it out in future steps. We also wrote a
+dead-easy function to get the store; the signature is literally <code>IDependencies -&gt; IDocumentStore</code>. No <code>ReaderM</code> in
+sight - yet!</p>
+<p>Now that we have a dependency "set" (of one), we need to go to <code>App.fs</code> and make sure we actually have a concrete
+instance of this for runtime. Change <code>namespace Cinco</code> to <code>module Cinco.App</code>, and add this just before main function:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+<span class="l">13: </span>
+<span class="l">14: </span>
+<span class="l">15: </span>
+<span class="l">16: </span>
+<span class="l">17: </span>
+<span class="l">18: </span>
+<span class="l">19: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">  <span class="k">open</span> <span onmouseout="hideTip(event, 'fs75', 125)" onmouseover="showTip(event, 'fs75', 125)" class="id">Data</span>
+  <span class="k">open</span> <span onmouseout="hideTip(event, 'fs76', 126)" onmouseover="showTip(event, 'fs76', 126)" class="id">Microsoft</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs77', 127)" onmouseover="showTip(event, 'fs77', 127)" class="id">FSharpLu</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs78', 128)" onmouseover="showTip(event, 'fs78', 128)" class="id">Json</span>
+  <span class="k">open</span> <span onmouseout="hideTip(event, 'fs1', 129)" onmouseover="showTip(event, 'fs1', 129)" class="id">Raven</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs2', 130)" onmouseover="showTip(event, 'fs2', 130)" class="id">Client</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs3', 131)" onmouseover="showTip(event, 'fs3', 131)" class="id">Documents</span>
+  <span class="k">open</span> <span onmouseout="hideTip(event, 'fs5', 132)" onmouseover="showTip(event, 'fs5', 132)" class="id">System</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs79', 133)" onmouseover="showTip(event, 'fs79', 133)" class="id">IO</span>
+
+  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs80', 134)" onmouseover="showTip(event, 'fs80', 134)" class="id">cfg</span> <span class="o">=</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs81', 135)" onmouseover="showTip(event, 'fs81', 135)" class="rt">File</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs82', 136)" onmouseover="showTip(event, 'fs82', 136)" class="id">ReadAllText</span> <span class="o">&gt;</span><span class="pn">&gt;</span> <span onmouseout="hideTip(event, 'fs83', 137)" onmouseover="showTip(event, 'fs83', 137)" class="m">DataConfig</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs22', 138)" onmouseover="showTip(event, 'fs22', 138)" class="id">fromJson</span><span class="pn">)</span> <span class="s">&quot;data-config.json&quot;</span>
+  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs72', 139)" onmouseover="showTip(event, 'fs72', 139)" class="id">deps</span> <span class="o">=</span> <span class="pn">{</span>
+    <span class="k">new</span> <span onmouseout="hideTip(event, 'fs68', 140)" onmouseover="showTip(event, 'fs68', 140)" class="if">IDependencies</span> <span class="k">with</span>
+      <span class="k">member</span> <span class="id">__</span><span class="pn">.</span><span class="fn">Store</span>
+        <span class="k">with</span> <span class="id">get</span> <span class="pn">(</span><span class="pn">)</span> <span class="o">=</span>
+          <span class="k">let</span> <span onmouseout="hideTip(event, 'fs84', 141)" onmouseover="showTip(event, 'fs84', 141)" class="id">store</span> <span class="o">=</span> <span class="k">lazy</span> <span class="pn">(</span>
+            <span class="k">let</span> <span onmouseout="hideTip(event, 'fs43', 142)" onmouseover="showTip(event, 'fs43', 142)" class="id">stor</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs83', 143)" onmouseover="showTip(event, 'fs83', 143)" class="m">DataConfig</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs39', 144)" onmouseover="showTip(event, 'fs39', 144)" class="id">configureStore</span> <span onmouseout="hideTip(event, 'fs80', 145)" onmouseover="showTip(event, 'fs80', 145)" class="id">cfg</span> <span class="pn">(</span><span class="k">new</span> <span onmouseout="hideTip(event, 'fs44', 146)" onmouseover="showTip(event, 'fs44', 146)" class="d">DocumentStore</span> <span class="pn">(</span><span class="pn">)</span><span class="pn">)</span>
+            <span onmouseout="hideTip(event, 'fs43', 147)" onmouseover="showTip(event, 'fs43', 147)" class="id">stor</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs85', 148)" onmouseover="showTip(event, 'fs85', 148)" class="id">Conventions</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs86', 149)" onmouseover="showTip(event, 'fs86', 149)" class="id">CustomizeJsonDeserializer</span> <span class="k">&lt;-</span>
+              <span class="k">fun</span> <span onmouseout="hideTip(event, 'fs87', 150)" onmouseover="showTip(event, 'fs87', 150)" class="id">x</span> <span class="k">-&gt;</span>
+                  <span onmouseout="hideTip(event, 'fs87', 151)" onmouseover="showTip(event, 'fs87', 151)" class="fn">x</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs88', 152)" onmouseover="showTip(event, 'fs88', 152)" class="id">Converters</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs89', 153)" onmouseover="showTip(event, 'fs89', 153)" class="id">Add</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs90', 154)" onmouseover="showTip(event, 'fs90', 154)" class="rt">CompactUnionJsonConverter</span> <span class="pn">(</span><span class="pn">)</span><span class="pn">)</span>
+            <span onmouseout="hideTip(event, 'fs43', 155)" onmouseover="showTip(event, 'fs43', 155)" class="fn">stor</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs91', 156)" onmouseover="showTip(event, 'fs91', 156)" class="id">Initialize</span> <span class="pn">(</span><span class="pn">)</span>
+            <span class="pn">)</span>
+          <span onmouseout="hideTip(event, 'fs84', 157)" onmouseover="showTip(event, 'fs84', 157)" class="fn">store</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs92', 158)" onmouseover="showTip(event, 'fs92', 158)" class="id">Force</span><span class="pn">(</span><span class="pn">)</span>
+      <span class="pn">}</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Here, we're using <code>lazy</code> to do this only once and only-on-demand, then we turn around and demand it. If you're thinking
+this sounds a lot like a singleton - your thinking is superb! That's exactly what we're doing here. We're also using
+F#'s inline interface declaration to create an implementation without creating a concrete class in which it is held. If
+you hover over <code>deps</code> above, you'll see that its type is <code>IDependencies</code>; even though we're using a traditional .NET
+interface, we won't have to cast it to its interface type to use it, as it's an anonymous concrete implementation.</p>
+<p>Maybe being our own IoC container isn't so bad! There is one piece missing, though, compared to our other
+implementations; we aren't yet making any calls to RavenDB to make sure our indexes exist. Let's add that as a function
+within <code>Data.fs</code>, at the bottom of the file:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">  <span class="k">open</span> <span onmouseout="hideTip(event, 'fs54', 90)" onmouseover="showTip(event, 'fs54', 90)" class="id">Indexes</span>
+
+  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs55', 91)" onmouseover="showTip(event, 'fs55', 91)" class="fn">ensureIndexes</span> <span onmouseout="hideTip(event, 'fs56', 92)" onmouseover="showTip(event, 'fs56', 92)" class="id">store</span> <span class="o">=</span>
+    <span onmouseout="hideTip(event, 'fs57', 93)" onmouseover="showTip(event, 'fs57', 93)" class="rt">IndexCreation</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs58', 94)" onmouseover="showTip(event, 'fs58', 94)" class="id">CreateIndexes</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs59', 95)" onmouseover="showTip(event, 'fs59', 95)" class="k">typeof</span><span class="pn">&lt;</span><span onmouseout="hideTip(event, 'fs8', 96)" onmouseover="showTip(event, 'fs8', 96)" class="rt">Categories_ByWebLogIdAndSlug</span><span class="pn">&gt;</span><span class="pn">.</span><span class="id">Assembly</span><span class="pn">,</span> <span onmouseout="hideTip(event, 'fs56', 97)" onmouseover="showTip(event, 'fs56', 97)" class="id">store</span><span class="pn">)</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Now, let's take a stab at actually pulling our store out of our dependencies, so we can use it to make sure our indexes
+exist. At the top of <code>main</code>:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs94', 160)" onmouseover="showTip(event, 'fs94', 160)" class="fn">checkIndexes</span> <span onmouseout="hideTip(event, 'fs56', 161)" onmouseover="showTip(event, 'fs56', 161)" class="id">store</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs75', 162)" onmouseover="showTip(event, 'fs75', 162)" class="m">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs55', 163)" onmouseover="showTip(event, 'fs55', 163)" class="id">ensureIndexes</span> <span onmouseout="hideTip(event, 'fs56', 164)" onmouseover="showTip(event, 'fs56', 164)" class="id">store</span>
+    <span class="k">let</span> <span onmouseout="hideTip(event, 'fs95', 165)" onmouseover="showTip(event, 'fs95', 165)" class="fn">start</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs64', 166)" onmouseover="showTip(event, 'fs64', 166)" class="fn">liftDep</span> <span onmouseout="hideTip(event, 'fs71', 167)" onmouseover="showTip(event, 'fs71', 167)" class="fn">getStore</span> <span onmouseout="hideTip(event, 'fs94', 168)" onmouseover="showTip(event, 'fs94', 168)" class="fn">checkIndexes</span>
+    <span onmouseout="hideTip(event, 'fs95', 169)" onmouseover="showTip(event, 'fs95', 169)" class="fn">start</span> <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs61', 170)" onmouseover="showTip(event, 'fs61', 170)" class="fn">run</span> <span onmouseout="hideTip(event, 'fs72', 171)" onmouseover="showTip(event, 'fs72', 171)" class="id">deps</span>
+</code></pre></td>
+</tr>
+</table>
+<p>If we're letting the types be our guide, how are we doing with these? <code>checkIndexes</code> has the signature
+<code>IDocumentStore -&gt; unit</code>, <code>start</code> has the signature <code>ReaderM&lt;IDependencies, unit&gt;</code>, and the third line is simply <code>unit</code>
+(which we can tell because the compiler isn't telling us we need to ignore the value or assign it). And, were we to run
+it, it would work, but... it's not really composable. Do we really want to have to define two extra variables every time
+we do something that requires a dependency? Of course not.</p>
+<p>Notice that the signature for <code>checkIndexes</code> is the same as <code>Data.ensureIndexes</code>; <code>checkIndexes</code> is redundant. And,
+there's no need to establish a variable for <code>start</code> either; we can just pipe our entire expression into <code>run deps</code>.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">    <span onmouseout="hideTip(event, 'fs64', 172)" onmouseover="showTip(event, 'fs64', 172)" class="fn">liftDep</span> <span onmouseout="hideTip(event, 'fs71', 173)" onmouseover="showTip(event, 'fs71', 173)" class="fn">getStore</span> <span onmouseout="hideTip(event, 'fs75', 174)" onmouseover="showTip(event, 'fs75', 174)" class="m">Data</span><span class="pn">.</span><span onmouseout="hideTip(event, 'fs55', 175)" onmouseover="showTip(event, 'fs55', 175)" class="id">ensureIndexes</span>
+    <span class="o">|&gt;</span> <span onmouseout="hideTip(event, 'fs61', 176)" onmouseover="showTip(event, 'fs61', 176)" class="fn">run</span> <span onmouseout="hideTip(event, 'fs72', 177)" onmouseover="showTip(event, 'fs72', 177)" class="id">deps</span>
+</code></pre></td>
+</tr>
+</table>
+<p>It works! We set up our dependencies, we composed a function using a dependency, and we used a <code>Reader</code> monad to make it
+all work.  But, how did it work?  Given what we just learned above, let's look at the steps; we're coders, not
+magicians.</p>
+<p>First up, <code>liftDeps</code>.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs64', 105)" onmouseover="showTip(event, 'fs64', 105)" class="fn">liftDep</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs65', 106)" onmouseover="showTip(event, 'fs65', 106)" class="fn">proj</span> <span class="pn">:</span> <span class="ta">&#39;</span><span class="id">d2</span> <span class="k">-&gt;</span> <span class="ta">&#39;</span><span class="id">d1</span><span class="pn">)</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs66', 107)" onmouseover="showTip(event, 'fs66', 107)" class="fn">rm</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs60', 108)" onmouseover="showTip(event, 'fs60', 108)" class="rt">ReaderM</span><span class="pn">&lt;</span><span class="ta">&#39;</span><span class="id">d1</span><span class="pn">,</span> <span class="ta">&#39;</span><span class="id">output</span><span class="pn">&gt;</span><span class="pn">)</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs60', 109)" onmouseover="showTip(event, 'fs60', 109)" class="rt">ReaderM</span><span class="pn">&lt;</span><span class="ta">&#39;</span><span class="id">d2</span><span class="pn">,</span> <span class="ta">&#39;</span><span class="id">output</span><span class="pn">&gt;</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs65', 110)" onmouseover="showTip(event, 'fs65', 110)" class="fn">proj</span> <span class="o">&gt;</span><span class="pn">&gt;</span> <span onmouseout="hideTip(event, 'fs66', 111)" onmouseover="showTip(event, 'fs66', 111)" class="fn">rm</span>
+</code></pre></td>
+</tr>
+</table>
+<p>The <code>proj</code> parameter is defined as a function that takes one value and returns another one. The <code>rm</code> parameter is a
+<code>Reader</code> monad that takes the <strong>return</strong> value of <code>proj</code>, and returns a <code>Reader</code> monad that takes the <strong>parameter</strong>
+value of <code>proj</code> and returns an output type. We passed <code>getStore</code> as the <code>proj</code> parameter, and its signature is
+<code>IDependencies -&gt; IDocumentStore</code>; the second parameter was a function with the signature <code>IDocumentStore -&gt; unit</code>.
+Where does this turn into a <code>ReaderM</code>? Why, the definition, of course!</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp"><span class="k">type</span> <span onmouseout="hideTip(event, 'fs60', 98)" onmouseover="showTip(event, 'fs60', 98)" class="rt">ReaderM</span><span class="pn">&lt;</span><span class="ta">&#39;</span><span class="id">d</span><span class="pn">,</span> <span class="ta">&#39;</span><span class="id">out</span><span class="pn">&gt;</span> <span class="o">=</span> <span class="ta">&#39;</span><span class="id">d</span> <span class="k">-&gt;</span> <span class="ta">&#39;</span><span class="id">out</span>
+</code></pre></td>
+</tr>
+</table>
+<p>Remember the time we spent discussing the <code>&gt;&gt;</code> operator? <code>ReaderM</code> is an alias for a one-parameter function, and
+<code>liftDep</code> uses it to compose one function with another, returning a one-parameter function. In concrete types for
+<code>liftDep</code>'s generics in our example, using <code>getStore</code> for <code>proj</code> means that <code>'d1</code> is <code>IDocumentStore</code> and <code>'d2</code> is
+<code>IDependencies</code>. (Note that <code>proj</code> is <code>'d2 -&gt; 'd1</code>; that's why its parameters are reversed from <code>getStore</code>'s.) When we
+passed <code>Data.ensureIndexes</code> as <code>rm</code>, its <code>'d1</code> is <code>IDocumentStore</code>, and <code>'output</code> is <code>unit</code>. When these two functions
+are composed, we end up with a function that requires <code>IDependencies</code> (<code>'d2</code>) and returns <code>unit</code> (<code>'output</code>); this
+matches the definition of <code>liftDep</code>'s output type, as <code>ReaderM&lt;'d2, 'output&gt;</code> is an alias for <code>'d2 -&gt; 'output</code>.</p>
+<p>If your head is spinning, get it stabilized, then read through that again. It can be quite complex - until it clicks.
+Then, it's like a light bulb goes off above your head. "Oh, it's called a <strong>reader</strong> monad because it shows us how to
+<strong>read</strong> the part we need from an object!" That's exactly what it does. We need a document store, and this other object
+has it; <code>ReaderM</code> lets us specify how to "read" (obtain) that dependency. We are free to write as many
+<code>IDocumentStore</code>-requiring functions as we want, and we'll be able to use <code>liftDep</code> and <code>getStore</code> to change those into
+<code>IDependencies</code>-requiring functions that return the same thing.</p>
+<p>Then, we can run them! <code>run</code> is defined as:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="fsharp">  <span class="k">let</span> <span onmouseout="hideTip(event, 'fs61', 99)" onmouseover="showTip(event, 'fs61', 99)" class="fn">run</span> <span onmouseout="hideTip(event, 'fs62', 100)" onmouseover="showTip(event, 'fs62', 100)" class="id">dep</span> <span class="pn">(</span><span onmouseout="hideTip(event, 'fs63', 101)" onmouseover="showTip(event, 'fs63', 101)" class="fn">rm</span> <span class="pn">:</span> <span onmouseout="hideTip(event, 'fs60', 102)" onmouseover="showTip(event, 'fs60', 102)" class="rt">ReaderM</span><span class="pn">&lt;</span><span class="id">_</span><span class="pn">,</span><span class="id">_</span><span class="pn">&gt;</span><span class="pn">)</span> <span class="o">=</span> <span onmouseout="hideTip(event, 'fs63', 103)" onmouseover="showTip(event, 'fs63', 103)" class="fn">rm</span> <span onmouseout="hideTip(event, 'fs62', 104)" onmouseover="showTip(event, 'fs62', 104)" class="id">dep</span>
+</code></pre></td>
+</tr>
+</table>
+<p>This is way easier than what we've seen up to this point. It takes an object and a <code>ReaderM</code>, and applies the object to
+the first parameter of the monad. By <code>|&gt;</code>ing the <code>ReaderM&lt;IDependencies, unit&gt;</code> to it, and providing our <code>IDependencies</code>
+instance, we receive the result; the reader has successfully encapsulated all the functions below it. From this point
+on, we'll just make sure our types are correct, and we'll be able to utilize not only an <code>IDocumentStore</code> for data
+manipulation, but any other dependencies we may need to define.</p>
+<p>Take a deep breath. Step 3 is done, and not only does it work, we understand why it works.</p>
+<hr />
+<p><a href="../step3">Back to Step 3</a></p>
+
+<div class="tip" id="fs1">namespace Raven</div>
+<div class="tip" id="fs2">namespace Raven.Client</div>
+<div class="tip" id="fs3">namespace Raven.Client.Documents</div>
+<div class="tip" id="fs4">namespace Raven.Client.Documents.Indexes</div>
+<div class="tip" id="fs5">namespace System</div>
+<div class="tip" id="fs6">namespace System.Collections</div>
+<div class="tip" id="fs7">namespace System.Collections.Generic</div>
+<div class="tip" id="fs8">Multiple items<br />type Categories_ByWebLogIdAndSlug =<br />&#160;&#160;inherit AbstractJavaScriptIndexCreationTask<br />&#160;&#160;new : unit -&gt; Categories_ByWebLogIdAndSlug<br /><br />--------------------<br />new : unit -&gt; Categories_ByWebLogIdAndSlug</div>
+<div class="tip" id="fs9">val this : Categories_ByWebLogIdAndSlug</div>
+<div class="tip" id="fs10">Multiple items<br />type AbstractJavaScriptIndexCreationTask =<br />&#160;&#160;inherit AbstractIndexCreationTask<br />&#160;&#160;member CreateIndexDefinition : unit -&gt; IndexDefinition<br />&#160;&#160;member Fields : Dictionary&lt;string, IndexFieldOptions&gt; with get, set<br />&#160;&#160;member IsMapReduce : bool<br />&#160;&#160;member Maps : HashSet&lt;string&gt; with get, set<br /><br />--------------------<br />AbstractJavaScriptIndexCreationTask() : AbstractJavaScriptIndexCreationTask</div>
+<div class="tip" id="fs11">property AbstractJavaScriptIndexCreationTask.Maps: HashSet&lt;string&gt;</div>
+<div class="tip" id="fs12">Multiple items<br />type HashSet&lt;&#39;T&gt; =<br />&#160;&#160;new : unit -&gt; HashSet&lt;&#39;T&gt; + 3 overloads<br />&#160;&#160;member Add : item:&#39;T -&gt; bool<br />&#160;&#160;member Clear : unit -&gt; unit<br />&#160;&#160;member Comparer : IEqualityComparer&lt;&#39;T&gt;<br />&#160;&#160;member Contains : item:&#39;T -&gt; bool<br />&#160;&#160;member CopyTo : array:&#39;T[] -&gt; unit + 2 overloads<br />&#160;&#160;member Count : int<br />&#160;&#160;member ExceptWith : other:IEnumerable&lt;&#39;T&gt; -&gt; unit<br />&#160;&#160;member GetEnumerator : unit -&gt; Enumerator&lt;&#39;T&gt;<br />&#160;&#160;member GetObjectData : info:SerializationInfo * context:StreamingContext -&gt; unit<br />&#160;&#160;...<br />&#160;&#160;nested type Enumerator<br /><br />--------------------<br />HashSet() : HashSet&lt;&#39;T&gt;<br />HashSet(comparer: IEqualityComparer&lt;&#39;T&gt;) : HashSet&lt;&#39;T&gt;<br />HashSet(collection: IEnumerable&lt;&#39;T&gt;) : HashSet&lt;&#39;T&gt;<br />HashSet(collection: IEnumerable&lt;&#39;T&gt;, comparer: IEqualityComparer&lt;&#39;T&gt;) : HashSet&lt;&#39;T&gt;</div>
+<div class="tip" id="fs13">Multiple items<br />val string : value:&#39;T -&gt; string<br /><br />--------------------<br />type string = System.String</div>
+<div class="tip" id="fs14">namespace Microsoft.FSharp.Data</div>
+<div class="tip" id="fs15">module Chiron</div>
+<div class="tip" id="fs16">type ConfigParameter =<br />&#160;&#160;| Url of string<br />&#160;&#160;| Database of string</div>
+<div class="tip" id="fs17">union case ConfigParameter.Url: string -&gt; ConfigParameter</div>
+<div class="tip" id="fs18">union case ConfigParameter.Database: string -&gt; ConfigParameter</div>
+<div class="tip" id="fs19">type DataConfig =<br />&#160;&#160;{Parameters: ConfigParameter list;}</div>
+<div class="tip" id="fs20">DataConfig.Parameters: ConfigParameter list</div>
+<div class="tip" id="fs21">type &#39;T list = List&lt;&#39;T&gt;</div>
+<div class="tip" id="fs22">val fromJson : json:string -&gt; DataConfig</div>
+<div class="tip" id="fs23">val json : string</div>
+<div class="tip" id="fs24">Multiple items<br />module Json<br /><br />from Chiron.Mapping<br /><br />--------------------<br />module Json<br /><br />from Chiron.Formatting<br /><br />--------------------<br />module Json<br /><br />from Chiron.Parsing<br /><br />--------------------<br />module Json<br /><br />from Chiron.Optics<br /><br />--------------------<br />module Json<br /><br />from Chiron.Functional<br /><br />--------------------<br /><br />--------------------<br />type Json&lt;&#39;a&gt; = Json -&gt; JsonResult&lt;&#39;a&gt; * Json</div>
+<div class="tip" id="fs25">val parse : (string -&gt; Json)</div>
+<div class="tip" id="fs26">union case Json.Object: Map&lt;string,Json&gt; -&gt; Json</div>
+<div class="tip" id="fs27">val config : Map&lt;string,Json&gt;</div>
+<div class="tip" id="fs28">Multiple items<br />module Map<br /><br />from Microsoft.FSharp.Collections<br /><br />--------------------<br />type Map&lt;&#39;Key,&#39;Value (requires comparison)&gt; =<br />&#160;&#160;interface IReadOnlyDictionary&lt;&#39;Key,&#39;Value&gt;<br />&#160;&#160;interface IReadOnlyCollection&lt;KeyValuePair&lt;&#39;Key,&#39;Value&gt;&gt;<br />&#160;&#160;interface IEnumerable<br />&#160;&#160;interface IComparable<br />&#160;&#160;interface IEnumerable&lt;KeyValuePair&lt;&#39;Key,&#39;Value&gt;&gt;<br />&#160;&#160;interface ICollection&lt;KeyValuePair&lt;&#39;Key,&#39;Value&gt;&gt;<br />&#160;&#160;interface IDictionary&lt;&#39;Key,&#39;Value&gt;<br />&#160;&#160;new : elements:seq&lt;&#39;Key * &#39;Value&gt; -&gt; Map&lt;&#39;Key,&#39;Value&gt;<br />&#160;&#160;member Add : key:&#39;Key * value:&#39;Value -&gt; Map&lt;&#39;Key,&#39;Value&gt;<br />&#160;&#160;member ContainsKey : key:&#39;Key -&gt; bool<br />&#160;&#160;...<br /><br />--------------------<br />new : elements:seq&lt;&#39;Key * &#39;Value&gt; -&gt; Map&lt;&#39;Key,&#39;Value&gt;</div>
+<div class="tip" id="fs29">val toList : table:Map&lt;&#39;Key,&#39;T&gt; -&gt; (&#39;Key * &#39;T) list (requires comparison)</div>
+<div class="tip" id="fs30">Multiple items<br />module List<br /><br />from Microsoft.FSharp.Collections<br /><br />--------------------<br />type List&lt;&#39;T&gt; =<br />&#160;&#160;| ( [] )<br />&#160;&#160;| ( :: ) of Head: &#39;T * Tail: &#39;T list<br />&#160;&#160;&#160;&#160;interface IReadOnlyList&lt;&#39;T&gt;<br />&#160;&#160;&#160;&#160;interface IReadOnlyCollection&lt;&#39;T&gt;<br />&#160;&#160;&#160;&#160;interface IEnumerable<br />&#160;&#160;&#160;&#160;interface IEnumerable&lt;&#39;T&gt;<br />&#160;&#160;&#160;&#160;member GetSlice : startIndex:int option * endIndex:int option -&gt; &#39;T list<br />&#160;&#160;&#160;&#160;member Head : &#39;T<br />&#160;&#160;&#160;&#160;member IsEmpty : bool<br />&#160;&#160;&#160;&#160;member Item : index:int -&gt; &#39;T with get<br />&#160;&#160;&#160;&#160;member Length : int<br />&#160;&#160;&#160;&#160;member Tail : &#39;T list<br />&#160;&#160;&#160;&#160;...</div>
+<div class="tip" id="fs31">val map : mapping:(&#39;T -&gt; &#39;U) -&gt; list:&#39;T list -&gt; &#39;U list</div>
+<div class="tip" id="fs32">val item : string * Json</div>
+<div class="tip" id="fs33">Multiple items<br />union case Json.String: string -&gt; Json<br /><br />--------------------<br />module String<br /><br />from Microsoft.FSharp.Core</div>
+<div class="tip" id="fs34">val x : string</div>
+<div class="tip" id="fs35">val key : string</div>
+<div class="tip" id="fs36">val value : Json</div>
+<div class="tip" id="fs37">val invalidOp : message:string -&gt; &#39;T</div>
+<div class="tip" id="fs38">val sprintf : format:Printf.StringFormat&lt;&#39;T&gt; -&gt; &#39;T</div>
+<div class="tip" id="fs39">val configureStore : config:DataConfig -&gt; store:DocumentStore -&gt; DocumentStore</div>
+<div class="tip" id="fs40">val config : DataConfig</div>
+<div class="tip" id="fs41">val store : DocumentStore</div>
+<div class="tip" id="fs42">val fold : folder:(&#39;State -&gt; &#39;T -&gt; &#39;State) -&gt; state:&#39;State -&gt; list:&#39;T list -&gt; &#39;State</div>
+<div class="tip" id="fs43">val stor : DocumentStore</div>
+<div class="tip" id="fs44">Multiple items<br />type DocumentStore =<br />&#160;&#160;inherit DocumentStoreBase<br />&#160;&#160;new : unit -&gt; DocumentStore<br />&#160;&#160;member AggressivelyCacheFor : cacheDuration:TimeSpan * ?database:string -&gt; IDisposable + 1 overload<br />&#160;&#160;member BulkInsert : ?database:string * ?token:CancellationToken -&gt; BulkInsertOperation<br />&#160;&#160;member Changes : ?database:string -&gt; IDatabaseChanges + 1 overload<br />&#160;&#160;member DisableAggressiveCaching : ?database:string -&gt; IDisposable<br />&#160;&#160;member Dispose : unit -&gt; unit<br />&#160;&#160;member GetLastDatabaseChangesStateException : ?database:string * ?nodeTag:string -&gt; Exception<br />&#160;&#160;member GetRequestExecutor : ?database:string -&gt; RequestExecutor<br />&#160;&#160;member Identifier : string with get, set<br />&#160;&#160;member Initialize : unit -&gt; IDocumentStore<br />&#160;&#160;...<br /><br />--------------------<br />DocumentStore() : DocumentStore</div>
+<div class="tip" id="fs45">val par : ConfigParameter</div>
+<div class="tip" id="fs46">val url : string</div>
+<div class="tip" id="fs47">property DocumentStoreBase.Urls: string []</div>
+<div class="tip" id="fs48">val db : string</div>
+<div class="tip" id="fs49">property DocumentStoreBase.Database: string</div>
+<div class="tip" id="fs50">val config : obj</div>
+<div class="tip" id="fs51">val cfg : obj</div>
+<div class="tip" id="fs52">val store : obj</div>
+<div class="tip" id="fs53">val ignore : value:&#39;T -&gt; unit</div>
+<div class="tip" id="fs54">Multiple items<br />namespace Raven.Client.Documents.Indexes<br /><br />--------------------<br />module Indexes<br /><br />from Cinco</div>
+<div class="tip" id="fs55">val ensureIndexes : store:IDocumentStore -&gt; unit</div>
+<div class="tip" id="fs56">val store : IDocumentStore</div>
+<div class="tip" id="fs57">type IndexCreation =<br />&#160;&#160;static member CreateIndexes : assemblyToScan:Assembly * store:IDocumentStore * ?conventions:DocumentConventions * ?database:string -&gt; unit + 1 overload<br />&#160;&#160;static member CreateIndexesAsync : assemblyToScan:Assembly * store:IDocumentStore * ?conventions:DocumentConventions * ?database:string * ?token:CancellationToken -&gt; Task + 1 overload</div>
+<div class="tip" id="fs58">IndexCreation.CreateIndexes(indexes: System.Collections.Generic.IEnumerable&lt;AbstractIndexCreationTask&gt;, store: IDocumentStore,?conventions: Conventions.DocumentConventions,?database: string) : unit<br />IndexCreation.CreateIndexes(assemblyToScan: System.Reflection.Assembly, store: IDocumentStore,?conventions: Conventions.DocumentConventions,?database: string) : unit</div>
+<div class="tip" id="fs59">val typeof&lt;&#39;T&gt; : System.Type</div>
+<div class="tip" id="fs60">type ReaderM&lt;&#39;d,&#39;out&gt; = &#39;d -&gt; &#39;out</div>
+<div class="tip" id="fs61">val run : dep:&#39;a -&gt; rm:ReaderM&lt;&#39;a,&#39;b&gt; -&gt; &#39;b</div>
+<div class="tip" id="fs62">val dep : &#39;a</div>
+<div class="tip" id="fs63">val rm : ReaderM&lt;&#39;a,&#39;b&gt;</div>
+<div class="tip" id="fs64">val liftDep : proj:(&#39;d2 -&gt; &#39;d1) -&gt; rm:ReaderM&lt;&#39;d1,&#39;output&gt; -&gt; ReaderM&lt;&#39;d2,&#39;output&gt;</div>
+<div class="tip" id="fs65">val proj : (&#39;d2 -&gt; &#39;d1)</div>
+<div class="tip" id="fs66">val rm : ReaderM&lt;&#39;d1,&#39;output&gt;</div>
+<div class="tip" id="fs67">module Reader<br /><br />from Cinco</div>
+<div class="tip" id="fs68">type IDependencies =<br />&#160;&#160;interface<br />&#160;&#160;&#160;&#160;abstract member Store : IDocumentStore<br />&#160;&#160;end</div>
+<div class="tip" id="fs69">type IDocumentStore =<br />&#160;&#160;inherit IDisposalNotification<br />&#160;&#160;inherit IDisposable<br />&#160;&#160;member AggressivelyCache : ?database:string -&gt; IDisposable<br />&#160;&#160;member AggressivelyCacheFor : cacheDuration:TimeSpan * ?database:string -&gt; IDisposable + 1 overload<br />&#160;&#160;member BulkInsert : ?database:string * ?token:CancellationToken -&gt; BulkInsertOperation<br />&#160;&#160;member Certificate : X509Certificate2<br />&#160;&#160;member Changes : ?database:string -&gt; IDatabaseChanges + 1 overload<br />&#160;&#160;member Conventions : DocumentConventions<br />&#160;&#160;member Database : string with get, set<br />&#160;&#160;member DisableAggressiveCaching : ?database:string -&gt; IDisposable<br />&#160;&#160;member ExecuteIndex : task:AbstractIndexCreationTask * ?database:string -&gt; unit<br />&#160;&#160;member ExecuteIndexAsync : task:AbstractIndexCreationTask * ?database:string * ?token:CancellationToken -&gt; Task<br />&#160;&#160;...</div>
+<div class="tip" id="fs70">Multiple items<br />type AutoOpenAttribute =<br />&#160;&#160;inherit Attribute<br />&#160;&#160;new : unit -&gt; AutoOpenAttribute<br />&#160;&#160;new : path:string -&gt; AutoOpenAttribute<br />&#160;&#160;member Path : string<br /><br />--------------------<br />new : unit -&gt; AutoOpenAttribute<br />new : path:string -&gt; AutoOpenAttribute</div>
+<div class="tip" id="fs71">val getStore : deps:IDependencies -&gt; IDocumentStore</div>
+<div class="tip" id="fs72">val deps : IDependencies</div>
+<div class="tip" id="fs73">property IDependencies.Store: IDocumentStore</div>
+<div class="tip" id="fs74">module App<br /><br />from Cinco</div>
+<div class="tip" id="fs75">Multiple items<br />module Data<br /><br />from Cinco<br /><br />--------------------<br />namespace Microsoft.FSharp.Data</div>
+<div class="tip" id="fs76">namespace Microsoft</div>
+<div class="tip" id="fs77">namespace Microsoft.FSharpLu</div>
+<div class="tip" id="fs78">namespace Microsoft.FSharpLu.Json</div>
+<div class="tip" id="fs79">namespace System.IO</div>
+<div class="tip" id="fs80">val cfg : DataConfig</div>
+<div class="tip" id="fs81">type File =<br />&#160;&#160;static member AppendAllLines : path:string * contents:IEnumerable&lt;string&gt; -&gt; unit + 1 overload<br />&#160;&#160;static member AppendAllText : path:string * contents:string -&gt; unit + 1 overload<br />&#160;&#160;static member AppendText : path:string -&gt; StreamWriter<br />&#160;&#160;static member Copy : sourceFileName:string * destFileName:string -&gt; unit + 1 overload<br />&#160;&#160;static member Create : path:string -&gt; FileStream + 3 overloads<br />&#160;&#160;static member CreateText : path:string -&gt; StreamWriter<br />&#160;&#160;static member Decrypt : path:string -&gt; unit<br />&#160;&#160;static member Delete : path:string -&gt; unit<br />&#160;&#160;static member Encrypt : path:string -&gt; unit<br />&#160;&#160;static member Exists : path:string -&gt; bool<br />&#160;&#160;...</div>
+<div class="tip" id="fs82">File.ReadAllText(path: string) : string<br />File.ReadAllText(path: string, encoding: System.Text.Encoding) : string</div>
+<div class="tip" id="fs83">Multiple items<br />module DataConfig<br /><br />from Cinco.Data<br /><br />--------------------<br />type DataConfig =<br />&#160;&#160;{Parameters: ConfigParameter list;}</div>
+<div class="tip" id="fs84">val store : Lazy&lt;IDocumentStore&gt;</div>
+<div class="tip" id="fs85">property DocumentStoreBase.Conventions: Conventions.DocumentConventions</div>
+<div class="tip" id="fs86">property Conventions.DocumentConventions.CustomizeJsonDeserializer: System.Action&lt;Newtonsoft.Json.JsonSerializer&gt;</div>
+<div class="tip" id="fs87">val x : Newtonsoft.Json.JsonSerializer</div>
+<div class="tip" id="fs88">property Newtonsoft.Json.JsonSerializer.Converters: Newtonsoft.Json.JsonConverterCollection</div>
+<div class="tip" id="fs89">System.Collections.ObjectModel.Collection.Add(item: Newtonsoft.Json.JsonConverter) : unit</div>
+<div class="tip" id="fs90">Multiple items<br /><br />--------------------<br />new : ?tupleAsHeterogeneousArray:bool * ?usePropertyFormatterForValues:bool -&gt; CompactUnionJsonConverter</div>
+<div class="tip" id="fs91">DocumentStore.Initialize() : IDocumentStore</div>
+<div class="tip" id="fs92">member System.Lazy.Force : unit -&gt; &#39;T</div>
+<div class="tip" id="fs93">val main : &#39;a -&gt; int</div>
+<div class="tip" id="fs94">val checkIndexes : (IDocumentStore -&gt; unit)</div>
+<div class="tip" id="fs95">val start : ReaderM&lt;IDependencies,unit&gt;</div>
+
+        </div>
+        <div class="span3">
+          <img src="/img/logo.png" alt="F# Project" style="width:150px;margin:10px" />  
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">objects |> functions</li>
+            <li><a href="/index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="https://github.com/bit-badger/o2f">Source Code on GitHub</a></li>
+            <li><a href="/license.html">License</a></li>
+            <li class="divider"></li>
+            <li class="nav-header">Steps</li>
+            <li><a href="/step0.html"><strong>0 |> Environment</strong></a></li>
+            <li><a href="/step1/"><strong>1 |> Hello World</strong></a></li>
+            <li><a href="/step2"><strong>2 |> Data Model</strong></a></li>
+            <li><a href="/step3"><strong>3 |> RavenDB Connection</strong></a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="https://github.com/bit-badger/o2f"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+  </body>
+  </html>

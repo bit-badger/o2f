@@ -28,7 +28,7 @@ Additionally, we will write start-up code that ensures our document collections 
 - Post retrieval by web log Id and permalink _(used to fufill single post requests)_
 - Post retrieval by web log Id and category Id _(used to get posts for category archive pages)_
 - Post retrieval by web log Id and tag _(used to get posts for tag archive pages)_
-- User retrieval by e-mail address and password _(used for log in)_
+- User retrieval by e-mail address and password _(used for log on)_
 
 One interesting feature that distinguishes RavenDB indexes from relational indexes is that if you index multiple fields, you can utilize the index for any of those fields, not just the first one listed. This means that we will only need to create one index on the `Category` collection, for example, because we have one requirement by web log Id, and one by web log Id and slug. A single index on both fields will support both queries.
 

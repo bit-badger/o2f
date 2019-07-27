@@ -69,9 +69,6 @@ module Configure =
   
   open Microsoft.Extensions.Configuration
   open Microsoft.Extensions.DependencyInjection
-(*** define: open-fsharplu ***)
-  open Microsoft.FSharpLu.Json
-(** *)
   open Raven.Client.Documents
   
   let configuration (ctx : WebHostBuilderContext) (cfg : IConfigurationBuilder) =
@@ -85,11 +82,6 @@ module Configure =
     let config = svc.BuildServiceProvider().GetRequiredService<IConfiguration> ()
     let cfg = config.GetSection "RavenDB"
     let store = new DocumentStore (Urls = [| cfg.["Url"] |], Database = cfg.["Database"])
-(*** define: add-fsharplu ***)
-    store.Conventions.CustomizeJsonDeserializer <-
-      fun x ->
-          x.Converters.Add (CompactUnionJsonConverter ())
-(** *)
     svc.AddSingleton (store.Initialize ()) |> ignore
 
   let app (app : IApplicationBuilder) =
@@ -132,14 +124,14 @@ we're doing with our keys.)_ I did a lot of testing on various ways around not h
 
 This will be another "seam" between F# representations and the .NET environment in general. However, we wouldn't be able
 to get a single-case DU from an HTTP request either, so this gives us an opportunity to learn another common F# pattern.
-When we [defined the data model originally](../step2/quatro-cinco.html), when we replaced `IArticleContent` with a
-multi-case DU, I added a `Generate` method to the DU's type, but mentioned that we may end up changing that. Let's do
-that now, as we'll use a similar technique to develop a repeatable way to deal with these seams.
+When we [defined the data model originally](../step2/quatro-cinco.html) and replaced `IArticleContent` with a multi-case
+DU, I added a `Generate` method to the DU's type, but mentioned that we may end up changing that. Let's do that now, as
+we'll use a similar technique to develop a repeatable way to deal with these seams.
 
-The "common pattern" is to use a type definition for the type itself, then define a module with the same name as the
-type to hold the behavior associated with that type. The module will be compiled with the word `Module` appended to the
-name of the class; this used to require an attribute, but was such a common pattern, it became part of the way the
-language works.
+This common pattern is to use a type definition for the type itself, then define a module with the same name as the type
+to hold the behavior associated with that type. The module will be compiled with the word `Module` appended to the name
+of the class; this used to require an attribute, but was such a common pattern, it became part of the way the language
+works.
 
 Here's our new `ArticleContent` definition:
 *)
@@ -169,14 +161,14 @@ module Domain =
       match content with Html x -> x | Markdown y -> MarkdownSharp.Markdown().Transform y
 (**
 That's the pattern we'll use for our identifiers. To begin, create a file named `Collection.fs`, and bring over the
-`Collection` module from **Tres**. There, we did not need it for our domain, but our implementations of the modules for
-our Id types will rely on it, so it needs to appear in the compilation order ahead of `Domain.fs`. In `Quatro.fsproj`,
-that's where it will go - just before `Domain.fs`. We'll also change `IdFor` to `idFor` and `FromId` to `fromId`.
+`Collection` module from **Tres**. There, we did not need it for our domain, but the modules for our Id types will rely
+on it, so it needs to appear in the compilation order ahead of `Domain.fs`. In `Quatro.fsproj`, that's where it will go
+- just before `Domain.fs`. We'll also change `IdFor` to `idFor` and `FromId` to `fromId`.
 ([the result](https://github.com/bit-badger/o2f/tree/step-3/src/4-Quatro/Collection.fs))
 
 As we've used the `Page` type for our examples thus far, we'll continue to use it for our example here. Our previous
 definition of `PageId` was `type PageId = PageId of string`. As we think through the various edges and seams of the
-project, there are four different transformations we'll need:
+project, there are five different transformations we'll need:
 
 - Converting a string PageId to a `PageId`; this is what we'll use if the web log has a static page defined as its home
 page.
@@ -217,8 +209,8 @@ signature `Guid -> PageId`.
 >
 > One other note - sometimes, when composing via `>>`, the compiler may complain about a "value restriction." This means
 > that, in the course of execution, the thing that appears to be a function will actually be executed once, and its
-> result remembered, rather than executing each time. There is a good "under the hood" reason for this, but it can seem
-> to be a strange quirk the first time you encounter it. To get around it, just specify the parameter and add it to the
+> result remembered, rather than executing each time. There is a good under-the-hood reason for this, but it can seem to
+> be a strange quirk the first time you encounter it. To get around it, just specify the parameter and add it to the
 > function body where it's needed.
 
 Remember, "let the types be your guide;" if you're still unclear about how those four definitions work, hover over each
@@ -237,25 +229,28 @@ We need to change the definition of `Page` to use `string` for the Id now.
     with
       static member Empty = 
         { Id             = ""
-          /// ...
+          // ...
           }
 
-We will write similar modules for all of the Id types. This may seem like boilerplate code that we thought F# helped us
-avoid; and, from one perspective, it is. However, even though it's much more code, it defines how we move from the
-primitive-value world into the strongly-typed environment of our application. And, while the presence of a `PageId`
-module doesn't keep us from writing `let pg = { Page.empty with Id = "abc123" }`, it does provide an easy way for us to
-**not** do that. Just as we developed the discipline of adding a new file to the project file when we created it, we
-will develop the discipline of creating strongly-typed Ids in our request handlers the first time we address them, and
-only ever setting an Id field using one of these functions, ideally deferring this to the point where it's stored in
-RavenDB. In effect, we'll push all the primitives out to the edges of the application.
+We will write similar modules for all of the Id types, and change the Ids in each type to strings; however, if an Id is
+not the Id for that type, we will leave it as a DU. So, for example, `Page.WebLogId` still has the `WebLogId` type.
+
+You may be thinking that this seems like boilerplate code that we thought F# helped us avoid; and, from one perspective,
+it is. However, even though it's much more code, it defines how we move from the primitive-value world into the
+strongly-typed environment of our application. And, while the presence of a `PageId` module doesn't keep us from writing
+`let pg = { Page.empty with Id = "abc123" }`, it does provide an easy way for us to **not** do that. Just as we
+developed the discipline of adding a new file to the project file when we created it, we will develop the discipline of
+creating strongly-typed Ids in our request handlers the first time we address them, and only ever setting an Id field
+using one of these functions, ideally deferring this to the point where it's stored in RavenDB. In effect, we'll push
+all the primitives out to the edges of the application.
 
 We won't need these for the other single-case DUs; however, there is another tweak we'll need to make for them.
 
 #### Single-Case DUs to JSON
 
-I mentioned on a prior page that JSON.NET has great F# support. While this is true, it does generate some verbose output
-for some types, and discriminated unions are one of those. As an example, if we have a variable named `x` defined as a
-`string option` that has the value `abc123`, this will be serialized as...
+I mentioned on a prior page that JSON.Net has great F# support. While this is true, it can generate rather verbose
+output for some types, and discriminated unions are one of those. As an example, if we have a variable named `x` defined
+as a `string option` that has the value `abc123`, this will be serialized as...
 
     [lang=json]
     {
@@ -273,7 +268,7 @@ something like...
 
     [lang=json]
     {
-      "x" : "abc123"
+      "x": "abc123"
     }
 
 ...or, in cases where `x` is `None`...
@@ -285,27 +280,32 @@ something like...
 
 ... (or even have `x` excluded from the output).
 
-There is a package called Microsoft.FSharpLu.Json that provides a JSON.NET converter that handles these cases; and,
-since RavenDB uses JSON.NET to serialize the documents, all we have to do is tell it to use it. This will be a new
+There is a package called Microsoft.FSharpLu.Json that provides a JSON.Net converter that handles these cases; and,
+since RavenDB uses JSON.Net to serialize the documents, all we have to do is tell it to use it. This will be a new
 reference overall, so we'll need to add `nuget Microsoft.FSharpLu.Json` to `paket.dependencies`, and then add
 `Microsoft.FSharpLu.Json` to `paket.references` in **Quatro**. (`paket install` as usual.)
 
 Then, in `App.fs`, we'll need to open the namespace (within the `Configure` module):
-*)
-(*** include open-fsharplu **)
-(**
+
+    [lang=fsharp]
+    open Microsoft.FSharpLu.Json
+
 ...and add the following just above the call to `svc.AddSingleton`:
-*)
-(*** include add-fsharplu ***)
-(**
+
+    [lang=fsharp]
+    store.Conventions.CustomizeJsonDeserializer <-
+      fun x ->
+          x.Converters.Add (CompactUnionJsonConverter ())
+
 This will serialize the single-case DUs as we described above, including our Id fields that aren't the actual Id of a
 document (those that point to other documents; our foreign keys, in relational terms). Additionally, our multi-case DUs
 that have no associated types will be serialized as strings, so statuses and levels will look just as though we were
 still using a defined set of magic strings.
 
 As we move along, we may need to write other `JsonConverter`s; if we do, we'll just need to add them to the function
-above. One important thing to remember is that JSON.NET will use the first matching converter it finds; so, if we write
-a converter for a DU, it will need to go above the `CompactUnionJsonConverter` or it will be used instead.
+above. One important thing to remember is that JSON.Net will use the first matching converter it finds; so, if we write
+a converter for a DU, the new one will need to go above the `CompactUnionJsonConverter` or that one will be used
+instead.
 
 Congratulations - **Quatro** should be ready to go! Ensure you've created an O2F4 database in RavenDB, then `dotnet run`
 this project and ensure that the store is initialized properly, and all indexes are created the way they were for our
