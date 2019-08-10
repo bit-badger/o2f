@@ -17,7 +17,7 @@ Create the persistent types we'll use for our application
 **[Step 3](step3/)** - RavenDB Connection and Indexes<br>
 Configure and prepare a RavenDB connection for use in our application
 
-**Step 4** - Framework Setup<br>
+**[Step 4](step4/)** - Framework Setup<br>
 Create folders / conventions for our application and load some dummy data
 
 **Step 5** - Routes<br>

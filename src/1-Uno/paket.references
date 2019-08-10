@@ -1,7 +1,4 @@
+AspNetCore.DistributedCache.RavenDB
 MarkdownSharp
-Microsoft.AspNetCore.Owin
-Microsoft.AspNetCore.Server.Kestrel
-Microsoft.Extensions.Configuration.FileExtensions
-Microsoft.Extensions.Configuration.Json
-Microsoft.Extensions.Options.ConfigurationExtensions
+Microsoft.AspNetCore.App
 RavenDb.Client

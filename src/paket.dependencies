@@ -1,5 +1,6 @@
 source https://www.nuget.org/api/v2
 
+nuget AspNetCore.DistributedCache.RavenDB
 nuget Chiron
 nuget FAKE
 nuget Freya
@@ -7,11 +8,7 @@ nuget FSharp.Core
 nuget FSharp.Formatting
 nuget Giraffe
 nuget MarkdownSharp
-nuget Microsoft.AspNetCore.Owin
-nuget Microsoft.AspNetCore.Server.Kestrel
-nuget Microsoft.Extensions.Configuration.FileExtensions
-nuget Microsoft.Extensions.Configuration.Json
-nuget Microsoft.Extensions.Options.ConfigurationExtensions
+nuget Microsoft.AspNetCore.App
 nuget Microsoft.FSharpLu.Json
 nuget Nancy
 nuget RavenDb.Client

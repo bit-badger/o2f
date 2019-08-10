@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Hosting;
 
 namespace Uno
 {
@@ -6,7 +7,7 @@ namespace Uno
     {
         static void Main(string[] args)
         {
-            using (var host = new WebHostBuilder().UseKestrel().UseStartup<Startup>().Build())
+            using (var host = WebHost.CreateDefaultBuilder(args).UseStartup<Startup>().Build())
             {
                 host.Run();
             }
