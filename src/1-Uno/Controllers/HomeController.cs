@@ -10,14 +10,16 @@ namespace Uno.Controllers
 {
     public class HomeController : Controller
     {
+        [HttpGet("")]
         public IActionResult Index() {
             HttpContext.Session.SetInt32("Count", (HttpContext.Session.GetInt32("Count") ?? 0) + 1);
-            return Content($"You have viewed this index {HttpContext.Session.GetInt32("Count")} times this session");
+            ViewData["Count"] = HttpContext.Session.GetInt32("Count");
+            return View();
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error() =>
-            Content(string.Format("Error {0}, Request ID {1}", HttpContext.Response.StatusCode,
+            View(null, string.Format("Error {0}, Request ID {1}", HttpContext.Response.StatusCode,
                 Activity.Current?.Id ?? HttpContext.TraceIdentifier));
 
         public async Task<IActionResult> Seed()
@@ -40,7 +42,7 @@ namespace Uno.Controllers
                     Subtitle = "ASP.NET Core MVC solution",
                     DefaultPage = "",
                     ThemePath = "",
-                    UrlBase = "http://localhost:5000",
+                    UrlBase = "https://localhost:5001",
                     TimeZone = "America/Chicago"
                 });
 
@@ -88,7 +90,7 @@ namespace Uno.Controllers
                     FirstName = "Uno",
                     LastName = "Admin",
                     PreferredName = "Alice",
-                    Url = "http://localhost:5000",
+                    Url = "https://localhost:5001",
                     Authorizations = new[]
                     {
                         new Authorization { Level = AuthorizationLevel.Administrator, WebLogId = webLogId }
@@ -237,6 +239,7 @@ namespace Uno.Controllers
                 await sess.SaveChangesAsync();
             }
 
+            Response.StatusCode = StatusCodes.Status200OK;
             return Content("All done!");
         }
     }
