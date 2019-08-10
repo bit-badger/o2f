@@ -991,7 +991,7 @@ NUGET
       Microsoft.Extensions.DependencyInjection.Abstractions (>= 2.2) - restriction: >= netstandard2.0
       Microsoft.Extensions.Options (>= 2.2) - restriction: >= netstandard2.0
       System.Text.Encodings.Web (>= 4.5) - restriction: >= netstandard2.0
-    Microsoft.FSharpLu.Json (0.11.2)
+    Microsoft.FSharpLu.Json (0.11.4)
       FSharp.Core (>= 4.5.4) - restriction: || (&& (>= net452) (< net461) (< netstandard1.6)) (&& (< net452) (>= netstandard1.6) (< netstandard2.0)) (&& (< net452) (>= netstandard2.0)) (&& (>= net461) (< netstandard1.6)) (>= net462)
       NETStandard.Library (>= 1.6.1) - restriction: && (< net452) (>= netstandard1.6) (< netstandard2.0)
       Newtonsoft.Json (>= 10.0.3) - restriction: || (&& (>= net452) (< net461) (< netstandard1.6)) (&& (< net452) (>= netstandard1.6) (< netstandard2.0)) (&& (< net452) (>= netstandard2.0)) (&& (>= net461) (< netstandard1.6)) (>= net462)
@@ -1754,3 +1754,12 @@ NUGET
       System.Reflection.Emit.Lightweight (>= 4.3) - restriction: || (&& (>= net45) (< netstandard2.0)) (&& (< net45) (>= netstandard2.0)) (>= net47)
       System.Threading.Tasks.Extensions (>= 4.4) - restriction: || (&& (>= net45) (< netstandard2.0)) (&& (< net45) (>= netstandard2.0)) (>= net47)
       System.ValueTuple (>= 4.4) - restriction: || (&& (>= net45) (< netstandard2.0)) (&& (< net45) (>= netstandard2.0)) (>= net47)
+  remote: https://ci.appveyor.com/nuget/nancy-session-persistable-master
+    Nancy.Session.Persistable (0.9.10-a) - restriction: >= netstandard2.0
+      FSharp.Core (>= 4.7) - restriction: || (>= net452) (>= netstandard2.0)
+      Nancy (>= 2.0) - restriction: || (>= net452) (>= netstandard2.0)
+      Newtonsoft.Json (>= 12.0.2) - restriction: || (>= net452) (>= netstandard2.0)
+    Nancy.Session.RavenDB (0.9.10-a)
+      FSharp.Core (>= 4.7) - restriction: >= netstandard2.0
+      Nancy.Session.Persistable (>= 0.9.10-a) - restriction: >= netstandard2.0
+      RavenDB.Client (>= 4.2.2) - restriction: >= netstandard2.0

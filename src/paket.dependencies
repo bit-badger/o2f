@@ -1,4 +1,5 @@
 source https://www.nuget.org/api/v2
+source https://ci.appveyor.com/nuget/nancy-session-persistable-master
 
 nuget AspNetCore.DistributedCache.RavenDB
 nuget Chiron
@@ -11,4 +12,5 @@ nuget MarkdownSharp
 nuget Microsoft.AspNetCore.App
 nuget Microsoft.FSharpLu.Json
 nuget Nancy
+nuget Nancy.Session.RavenDB prerelease
 nuget RavenDb.Client
