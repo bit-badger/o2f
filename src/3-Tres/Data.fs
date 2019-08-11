@@ -4,8 +4,10 @@ open Newtonsoft.Json
 open System
 
 type DataConfig =
-  { Url      : string
-    Database : string
+  { Url         : string
+    Database    : string
+    Certificate : string
+    Password    : string
     }
   with
     [<JsonIgnore>]

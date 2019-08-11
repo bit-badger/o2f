@@ -5,13 +5,13 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Nancy
 open Nancy.Owin
+open Nancy.Session.Persistable
+open Nancy.Session.RavenDB
 open Newtonsoft.Json
 open Raven.Client.Documents
 open Raven.Client.Documents.Indexes
 open System.IO
-open System.Security.Cryptography.X509Certificates //new
-open Nancy.Session.Persistable //new
-open Nancy.Session.RavenDB // new
+open System.Security.Cryptography.X509Certificates
 
 type TresBootstrapper () =
   inherit DefaultNancyBootstrapper ()
@@ -28,6 +28,9 @@ type TresBootstrapper () =
           | false -> new X509Certificate2(cfg.Certificate, cfg.Password))).Initialize ()
     )).Force ()
 
+  override __.Configure environment =
+    environment.Tracing (enabled = false, displayErrorTraces = true)
+    
   override __.ConfigureApplicationContainer container =
     base.ConfigureApplicationContainer container
     container.Register<IDocumentStore> _store |> ignore
