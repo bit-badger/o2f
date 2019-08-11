@@ -9,16 +9,34 @@ open Newtonsoft.Json
 open Raven.Client.Documents
 open Raven.Client.Documents.Indexes
 open System.IO
+open System.Security.Cryptography.X509Certificates //new
+open Nancy.Session.Persistable //new
+open Nancy.Session.RavenDB // new
 
 type TresBootstrapper () =
   inherit DefaultNancyBootstrapper ()
 
-    override __.ConfigureApplicationContainer container =
-      base.ConfigureApplicationContainer container
-      let cfg = File.ReadAllText "data-config.json" |> JsonConvert.DeserializeObject<DataConfig>
-      let store = new DocumentStore (Urls = cfg.Urls, Database = cfg.Database)
-      container.Register<IDocumentStore> (store.Initialize ()) |> ignore
-      IndexCreation.CreateIndexes (typeof<Categories_ByWebLogIdAndSlug>.Assembly, store)
+  let _store =
+    (lazy
+      (let cfg = File.ReadAllText "data-config.json" |> JsonConvert.DeserializeObject<DataConfig>
+      (new DocumentStore (
+        Urls = cfg.Urls,
+        Database = cfg.Database,
+        Certificate =
+          match isNull cfg.Certificate || cfg.Certificate = "" with
+          | true -> null
+          | false -> new X509Certificate2(cfg.Certificate, cfg.Password))).Initialize ()
+    )).Force ()
+
+  override __.ConfigureApplicationContainer container =
+    base.ConfigureApplicationContainer container
+    container.Register<IDocumentStore> _store |> ignore
+  
+  override __.ApplicationStartup (container, pipelines) =
+    base.ApplicationStartup(container, pipelines);
+    IndexCreation.CreateIndexes (typeof<Categories_ByWebLogIdAndSlug>.Assembly, _store)
+    PersistableSessions.Enable (pipelines, RavenDBSessionConfiguration _store)
+
 
 type Startup() =
   member __.Configure (app : IApplicationBuilder) =

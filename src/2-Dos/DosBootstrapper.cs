@@ -31,10 +31,6 @@ namespace Dos
 
         public DosBootstrapper() : base() { }
 
-        public override void Configure(Nancy.Configuration.INancyEnvironment environment)
-        {
-            environment.Tracing(enabled: false, displayErrorTraces: true);
-        }
         protected override void ConfigureApplicationContainer(TinyIoCContainer container)
         {
             base.ConfigureApplicationContainer(container);
@@ -44,8 +40,7 @@ namespace Dos
         {
             base.ApplicationStartup(container, pipelines);
             IndexCreation.CreateIndexes(typeof(Categories_ByWebLogIdAndSlug).Assembly, Store);
-            PersistableSessions.Enable(pipelines,
-                new RavenDBSessionConfiguration(Store) { LogLevel = SessionLogLevel.Debug });
+            PersistableSessions.Enable(pipelines, new RavenDBSessionConfiguration(Store));
         }
     }
 }

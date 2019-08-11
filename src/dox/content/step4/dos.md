@@ -62,7 +62,7 @@ At this point, we should be able to start the application, then use RavenDB Stud
 
 #### Data Seeding
 
-As with **Uno**, we'll make an endpoint on our `HomeModule` to seed the data, which we can delete when we get to step 5. Rather than go through it here, you can [view the completed method](https://github.com/bit-badger/o2f/tree/master/src/2-Dos/Modules/HomeModule.cs) to see the hard-coded values we're storing. Notice that we provided an instance of `IDocumentStore` in the constructor; TinyIoC will resolve that for us and provide us with the instance we registered in our bootstrapper.
+As with **Uno**, we'll make an endpoint on our `HomeModule` to seed the data, which we can delete when we get to step 5. Rather than go through it here, you can [view the completed method](https://github.com/bit-badger/o2f/tree/master/src/2-Dos/Modules/HomeModule.cs#L17) to see the hard-coded values we're storing. Notice that we provided an instance of `IDocumentStore` in the constructor; TinyIoC will resolve that for us and provide us with the instance we registered in our bootstrapper.
 
 Run the application, then visit http://localhost:5000/seed; you should see "All done!". At that point, you should also be able to use RavenDB Studio to look at the documents that were added during this step.
 

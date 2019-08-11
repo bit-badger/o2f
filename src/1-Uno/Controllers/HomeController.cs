@@ -4,6 +4,7 @@ using Raven.Client.Documents;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Uno.Data;
 using Uno.Domain;
 
 namespace Uno.Controllers
@@ -24,7 +25,7 @@ namespace Uno.Controllers
 
         public async Task<IActionResult> Seed()
         {
-            string newId() => Guid.NewGuid().ToString("N");
+            string newId(string collection) => $"{collection}/{Guid.NewGuid().ToString("N")}";
             long now() => DateTime.Now.Ticks;
             long days(int nbr) => new TimeSpan(nbr, 0, 0, 0).Ticks;
 
@@ -33,7 +34,7 @@ namespace Uno.Controllers
                     .OpenAsyncSession())
             {
                 // Web log
-                var webLogId = newId();
+                var webLogId = newId(Collection.WebLog);
                 
                 await sess.StoreAsync(new WebLog
                 {
@@ -47,9 +48,9 @@ namespace Uno.Controllers
                 });
 
                 // Categories
-                var catNewsId = newId();
-                var catSportsId = newId();
-                var catCatsId = newId();
+                var catNewsId = newId(Collection.Category);
+                var catSportsId = newId(Collection.Category);
+                var catCatsId = newId(Collection.Category);
 
                 await sess.StoreAsync(new Category
                 {
@@ -80,7 +81,7 @@ namespace Uno.Controllers
                 });
 
                 // Users / Authors
-                var userId = newId();
+                var userId = newId(Collection.User);
 
                 await sess.StoreAsync(new User
                 {
@@ -98,7 +99,7 @@ namespace Uno.Controllers
                 });
 
                 // Pages
-                var aboutId = newId();
+                var aboutId = newId(Collection.Page);
                 var aboutNow = now();
 
                 await sess.StoreAsync(new Page
@@ -128,7 +129,7 @@ namespace Uno.Controllers
                     }
                 });
 
-                var contactId = newId();
+                var contactId = newId(Collection.Page);
                 var contactNow = now();
 
                 await sess.StoreAsync(new Page
@@ -153,7 +154,7 @@ namespace Uno.Controllers
                 });
 
                 // Posts
-                var postNews1Id = newId();
+                var postNews1Id = newId(Collection.Post);
                 var postNews1Now = now();
 
                 await sess.StoreAsync(new Post
@@ -184,7 +185,7 @@ namespace Uno.Controllers
                     }
                 });
 
-                var postNews2Id = newId();
+                var postNews2Id = newId(Collection.Post);
                 var postNews2Now = now() - days(7);
                 var postNews2Text = "In a historic, never-before-seen circumstance, the presidential election ended in a tie. The Constitution does not provide for any sort of tie-breaker, so the Supreme Court has ruled that neither party has won. Surprisingly, the candidates believe this may be the best thing for the country; one of them was quoted as saying, \"Last month, one of my competitors called Congress a 'do-nothing Congress', and the next day, their approval rating had actually gone **up** 5 points. It's like the American people just want us to leave them alone, and they couldn't have sent a clearer message with today's results.\" Americans are generally optimistic about the next 4 years with no leader in the White House, though they remain apprehensive that, without the responsibility of actually governing, the candidates will just continue campaigning for another 4 years.";
 
@@ -211,7 +212,7 @@ namespace Uno.Controllers
                     }
                 });
 
-                var postSportsId = newId();
+                var postSportsId = newId(Collection.Post);
                 var postSportsNow = now() - days(10);
 
                 await sess.StoreAsync(new Post
