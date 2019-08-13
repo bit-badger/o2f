@@ -4,8 +4,6 @@ For each of our applications, we'll need certain over-arching things set up. All
 
 ### Individual Implementations
 
-Each of these not only evolves from step 2 to step 3, they also evolve as Uno moves to Cinco. It may help your understanding to read each of them, even if your interest is just in one of them.
-
 **Uno** - [In Depth](uno.html)
 
 **Dos** - [In Depth](dos.html)
