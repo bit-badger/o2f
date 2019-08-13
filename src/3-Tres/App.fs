@@ -12,20 +12,25 @@ open Raven.Client.Documents
 open Raven.Client.Documents.Indexes
 open System.IO
 open System.Security.Cryptography.X509Certificates
+open Tres.Domain
 
 type TresBootstrapper () =
   inherit DefaultNancyBootstrapper ()
 
   let _store =
     (lazy
-      (let cfg = File.ReadAllText "data-config.json" |> JsonConvert.DeserializeObject<DataConfig>
-      (new DocumentStore (
-        Urls = cfg.Urls,
-        Database = cfg.Database,
-        Certificate =
-          match isNull cfg.Certificate || cfg.Certificate = "" with
-          | true -> null
-          | false -> new X509Certificate2(cfg.Certificate, cfg.Password))).Initialize ()
+     (let cfg = File.ReadAllText "data-config.json" |> JsonConvert.DeserializeObject<DataConfig>
+      let store =
+        new DocumentStore (
+          Urls        = cfg.Urls,
+          Database    = cfg.Database,
+          Certificate =
+            match isNull cfg.Certificate || cfg.Certificate = "" with
+            | true -> null
+            | false -> new X509Certificate2(cfg.Certificate, cfg.Password))
+      store.Conventions.CustomizeJsonSerializer <-
+        fun x -> x.Converters.Add (IArticleContentConverter ())
+      store.Initialize ()
     )).Force ()
 
   override __.Configure environment =

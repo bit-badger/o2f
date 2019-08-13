@@ -12,6 +12,6 @@ Each of these not only evolves from step 2 to step 3, they also evolve as Uno mo
 
 **Tres** - [In Depth](tres.html)
 
-**Quatro** - [In Depth](quatro.html)
+**Quatro** - In Depth
 
-**Cinco** - [In Depth](cinco.html)
+**Cinco** - In Depth

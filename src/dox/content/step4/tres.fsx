@@ -25,6 +25,32 @@ module Indexes =
               Slug = category.Slug
           })"
           ]
+[<AutoOpen>]
+module Domain =
+  [<RequireQualifiedAccess>]
+  module ContentType =
+    [<Literal>]
+    let Html = "Html"
+    [<Literal>]        
+    let Markdown = "Markdown"
+  type IArticleContent =
+    abstract member ContentType : string with get
+    abstract member Text : string with get, set
+    abstract member Generate : unit -> string
+  type HtmlArticleContent () =
+    let mutable text = ""
+    override __.ToString () = sprintf "HTML -> %s" text
+    interface IArticleContent with
+      member __.ContentType = ContentType.Html
+      member __.Text with get () = text and set v = text <- v
+      member __.Generate () = text
+  type MarkdownArticleContent () =
+    let mutable text = ""
+    override __.ToString () = sprintf "Markdown -> %s" text
+    interface IArticleContent with
+      member __.ContentType = ContentType.Markdown
+      member __.Text with get () = text and set v = text <- v
+      member __.Generate () = text
 (**
 ### Tres - Step 4
 
@@ -71,8 +97,8 @@ type TresBootstrapper () =
     (lazy
       (let cfg = File.ReadAllText "data-config.json" |> JsonConvert.DeserializeObject<DataConfig>
       (new DocumentStore (
-        Urls = cfg.Urls,
-        Database = cfg.Database,
+        Urls        = cfg.Urls,
+        Database    = cfg.Database,
         Certificate =
           match isNull cfg.Certificate || cfg.Certificate = "" with
           | true -> null
@@ -113,8 +139,7 @@ value). You will also see keywords followed by an exclamation point - `let!`, `d
 keywords will have special meaning, and will directly affect whatever computation is being determined.
 
 The `seq` CE also has a `yield` keyword, that acts like `yield return` does in C#; the `yield!` keyword yields each of
-the items of an existing sequence. Let's look at an example `seq` CE, which we'll use to create the parts of a fake US
-phone number.
+the items of an existing sequence. Below is an example `seq` CE, which contains the parts of a fake US phone number.
 *)
 (*** hide ***)
 module Example =
@@ -126,6 +151,9 @@ module Example =
       yield "6789"
       }
 (**
+
+We could combine these using `let phone = x |> Seq.reduce (+)`.
+
 ##### The `task` CE
 
 F# provides an `async` CE that is used to define a workflow that can execute asynchronous processes together with others
@@ -153,10 +181,93 @@ be run with `.ConfigureAwait(false)`; this keeps tasks from deadlocking from wai
 One final note - the `:> obj` at the bottom of the `seed` function makes the return type `Task<obj>` instead of
 `Task<string>`, which is the required signature for `NancyModule`'s `Get` method.
 
+##### But Wait, There's More!
+
+Go ahead and run it at this point, go to `http://localhost:5000/seed`, and compare the RavenDB documents for posts or
+pages against the ones created for **Dos**. You'll notice that the content types (our `IArticleContent` fields) do not
+have the `ContentType` and `Text` properties! For some reason, this is serialized differently if it's part of an F#
+record type. _(This may be an edge-case bug; if I can isolate the behavior, I'll submit an issue.)_ However, this gives
+us a chance for an early look at writing our own custom `JsonConverter`s. In step 3 **Quatro**, we added FSharpLu's
+compact DU converter to RavenDB's configuration; this time, we'll write our own.
+
+Just below the definition of `MarkdownArticleContent`, we'll create `IArticleContentConverter`, which will extend
+`JsonConverter<IArticleContent>`. Generic converters need to implement two methods, `WriteJson` and `ReadJson`. Writing
+is the easiest; and, since we have a `ContentType` property, we don't actually need to write the underlying CLR type to
+the database. Here's the declaration, up through `WriteJson`.
+*)
+type IArticleContentConverter () =
+  inherit JsonConverter<IArticleContent> ()
+
+  override __.WriteJson (w : JsonWriter, v : IArticleContent, _ : JsonSerializer) =
+    let writePair k (v : string) =
+      w.WritePropertyName k
+      w.WriteValue        v
+    w.WriteStartObject ()
+    writePair "ContentType" v.ContentType
+    writePair "Text"        v.Text
+    w.WriteEndObject ()
+(**
+Each `Write*` call in Json.NET writes a token; these tokens describe the shape of the JSON that will eventually be
+serialized. Since we're intercepting a single property, but writing multiple values, we need to identify it as an
+object. Then, we write two sets of property name and value tokens, and an end object token.
+
+Reading it back is a bit different:
+*)
+  override __.ReadJson (r : JsonReader, _, _, _, _) =
+    let readIgnore = r.Read >> ignore
+    let typ  = (readIgnore >> r.ReadAsString) () // PropertyName -> String
+    let text = (readIgnore >> r.ReadAsString) () // PropertyName -> String
+    readIgnore () // EndObject
+    let content : IArticleContent =
+      match typ with
+      | ContentType.Html -> upcast HtmlArticleContent ()
+      | ContentType.Markdown -> upcast MarkdownArticleContent ()
+      | x -> invalidOp (sprintf "Cannot deserialize %s into IArticleContent" x)
+    content.Text <- text
+    content
+(**
+When `ReadJson` is called, the starting object token has already been read. We read the tokens back in the order in
+which we wrote them, so we'll see a property name token, then a value token. We know the property that we wrote, so we
+can ignore that token; then, we know the value that we wrote is a string, so we can read the next token's value as a
+string. We'll repeat that process for the actual text, and then, we need one more read to advance the reader past the
+end object token. Once we have our property values, the `ContentType` tells us what type of implementation to construct,
+and we can use the `Text` setter on the `IArticleContent` interface to put the text in the object.
+
+This can seem convoluted, but hopefully the comments above help somewhat. I learned about what I've explained in this
+section when I encountered _this_ problem for _this_ project. Also, most of our other `JsonConverter`s will be simply
+transforming the value as it's written and read, not writing an entire object based on the data type of the property.
+Even this converter, though, easily fits on one screen, and thanks to F#'s function composition, it isn't repetitive;
+nearly every line does something different.
+
+We do need to revisit our RavenDB connection, though, as we need to actually plug our converter into the document store.
+Here's the updated definition of `_store` from `App.fs`:
+*)
+(*** hide ***)
+module UpdatedStore =
+(** *)
+  let _store =
+    (lazy
+     (let cfg = File.ReadAllText "data-config.json" |> JsonConvert.DeserializeObject<DataConfig>
+      let store =
+        new DocumentStore (
+          Urls        = cfg.Urls,
+          Database    = cfg.Database,
+          Certificate =
+            match isNull cfg.Certificate || cfg.Certificate = "" with
+            | true -> null
+            | false -> new X509Certificate2(cfg.Certificate, cfg.Password))
+      store.Conventions.CustomizeJsonSerializer <-
+        fun x -> x.Converters.Add (IArticleContentConverter ())
+      store.Initialize ()
+    )).Force ()
+(**
+At this point, use RavenDB studio to delete the existing documents, re-run the application, and re-seed the database.
+You should now see `ContentType` and `Text` fields under the page/post's `Text` and `Revision` properties.
+
 #### Conclusion
 
-We did another C# to F# translation, and we learned about computation expressions and the `task` CE. Nice job - now, on
-to **Quatro**!
+We did another C# to F# translation. We also learned about computation expressions in general, the `task` CE
+specifically, and how to write a non-trivial JSON converter. Nice job - now, on to **Quatro**!
 
 ---
 [Back to step 4](../step4)

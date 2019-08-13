@@ -1,5 +1,7 @@
 ### Uno - Step 4
 
+**NOTE: This page is a draft: following these directions at this point does not result in a working application. [Dos](./dos.html) and [Tres](./tres.html) are complete, though, if you want to take a look at them.**
+
 #### Dependencies
 
 If you remember all the way back to [step 1](../step1/uno.html), we only pulled in the ASP.NET Core packages we needed to do our "Hello World" app. At this point, though, we'll go ahead and bring in the entire `Microsoft.AspNetCore.App` meta-package, which will install a whole lot more, including the Razor templating engine.

@@ -38,6 +38,7 @@ type IArticleContent =
 
 type HtmlArticleContent () =
   let mutable text = ""
+  override __.ToString () = sprintf "HTML -> %s" text
   interface IArticleContent with
     member __.ContentType = ContentType.Html
     member __.Text with get () = text and set v = text <- v
@@ -45,10 +46,39 @@ type HtmlArticleContent () =
 
 type MarkdownArticleContent () =
   let mutable text = ""
+  override __.ToString () = sprintf "Markdown -> %s" text
   interface IArticleContent with
     member __.ContentType = ContentType.Markdown
     member __.Text with get () = text and set v = text <- v
     member __.Generate () = MarkdownSharp.Markdown().Transform text
+
+
+open Newtonsoft.Json
+
+type IArticleContentConverter () =
+  inherit JsonConverter<IArticleContent> ()
+
+  override __.WriteJson (w : JsonWriter, v : IArticleContent, _ : JsonSerializer) =
+    let writePair k (v : string) =
+      w.WritePropertyName k
+      w.WriteValue        v
+    w.WriteStartObject ()
+    writePair "ContentType" v.ContentType
+    writePair "Text"        v.Text
+    w.WriteEndObject ()
+
+  override __.ReadJson (r : JsonReader, _, _, _, _) =
+    let readIgnore = r.Read >> ignore
+    let typ  = (readIgnore >> r.ReadAsString) () // PropertyName -> String
+    let text = (readIgnore >> r.ReadAsString) () // PropertyName -> String
+    readIgnore () // EndObject
+    let content : IArticleContent =
+      match typ with
+      | ContentType.Html -> upcast HtmlArticleContent ()
+      | ContentType.Markdown -> upcast MarkdownArticleContent ()
+      | x -> invalidOp (sprintf "Cannot deserialize %s into IArticleContent" x)
+    content.Text <- text
+    content
 
 
 [<CLIMutable; NoComparison; NoEquality>]

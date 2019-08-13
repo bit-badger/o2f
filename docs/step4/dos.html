@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>dos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content="A working example to demonstrate to C# developers how F# can improve their workflow and performance"/>
+    <meta name="author" content="Daniel J. Summers"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+
+    <link type="text/css" rel="stylesheet" href="/content/style.css" />
+    <script type="text/javascript" src="/content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://fsharp.org">fsharp.org</a></li>
+          <li><a href="https://github.com/bit-badger/o2f">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="/index.html">objects |> functions</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+<h3><a name="Dos-Step-4" class="anchor" href="#Dos-Step-4">Dos - Step 4</a></h3>
+<h4><a name="Dependencies" class="anchor" href="#Dependencies">Dependencies</a></h4>
+<p>There are fewer changes here than there were for <strong>Uno</strong>; in fact, we really only need one more package. Add <code>nuget Nancy.Session.RavenDB</code> to <code>paket.dependencies</code>, add <code>Nancy.Session.RavenDB</code> to <code>paket.references</code>, and run <code>paket install</code>.</p>
+<h4><a name="Bootstrapper-Updates" class="anchor" href="#Bootstrapper-Updates">Bootstrapper Updates</a></h4>
+<p>The package we've added is part of the <a href="https://github.com/danieljsummers/Nancy.Session.Persistable"><code>Nancy.Session.Persistable</code> project</a>, a set of persistence providers I wrote for Nancy that allow strongly-typed access to session objects, and provide for several different stores of session data. We need to configure this in our bootstrapper, though. We also need to update our <code>DataConfig</code> class to handle the configuration of a certificate file and password, to support secure connections to RavenDB.</p>
+<p>In <code>DataConfig.cs</code>, above the definition for <code>Urls</code>:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp"><span class="k">public</span> <span class="k">string</span> Certificate { get; set; }
+<span class="k">public</span> <span class="k">string</span> Password { get; set; }
+</code></pre></td></tr></table>
+<p>Our bootstrapper is going to look significantly different than it did before. When we set up RavenDB, we put all the logic in <code>ConfigureApplicationContainer</code>, even though its main purpose it to register dependencies in the IoC container. To actually affect the Nancy request execution pipeline, we need to override <code>ApplicationStartup</code> as well. Since we'll need our <code>IDocumentStore</code> instance in both places, we'll make it a <code>private static</code> property of the bootstrapper.</p>
+<p>First, we need several new <code>using</code>s:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp"><span class="k">using</span> Nancy.Bootstrapper;
+<span class="k">using</span> Nancy.Session.Persistable;
+<span class="k">using</span> Nancy.Session.RavenDB;
+<span class="k">using</span> System;
+<span class="k">using</span> System.Security.Cryptography.X<span class="n">509</span>Certificates;
+</code></pre></td></tr></table>
+<p>Then, we'll create our <code>Store</code> property:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+<span class="l">12: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp"><span class="k">private</span> <span class="k">static</span> IDocumentStore Store <span class="o">=</span> <span class="k">new</span> Lazy&lt;IDocumentStore&gt;(() <span class="o">=</span><span class="o">&gt;</span>
+{
+    <span class="k">var</span> cfg <span class="o">=</span> JsonConvert.DeserializeObject&lt;DataConfig&gt;(File.ReadAllText(<span class="s">"data-config.json"</span>));
+    <span class="k">return</span> <span class="k">new</span> DocumentStore
+    {
+        Urls <span class="o">=</span> cfg.Urls,
+        Database <span class="o">=</span> cfg.Database,
+        Certificate <span class="o">=</span> <span class="k">string</span>.IsNullOrEmpty(cfg.Certificate)
+            <span class="o">?</span> <span class="k">null</span>
+            <span class="o">:</span> <span class="k">new</span> X<span class="n">509</span>Certificate<span class="n">2</span>(cfg.Certificate, cfg.Password)
+    }.Initialize();
+}).Value;
+</code></pre></td></tr></table>
+<p>Finally, our two overridden methods:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
+<span class="l"> 2: </span>
+<span class="l"> 3: </span>
+<span class="l"> 4: </span>
+<span class="l"> 5: </span>
+<span class="l"> 6: </span>
+<span class="l"> 7: </span>
+<span class="l"> 8: </span>
+<span class="l"> 9: </span>
+<span class="l">10: </span>
+<span class="l">11: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp"><span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> ConfigureApplicationContainer(TinyIoCContainer container)
+{
+    <span class="k">base</span>.ConfigureApplicationContainer(container);
+    container.Register(Store);
+}
+<span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> ApplicationStartup(TinyIoCContainer container, IPipelines pipelines)
+{
+    <span class="k">base</span>.ApplicationStartup(container, pipelines);
+    IndexCreation.CreateIndexes(<span class="k">typeof</span>(Categories_ByWebLogIdAndSlug).Assembly, Store);
+    PersistableSessions.Enable(pipelines, <span class="k">new</span> RavenDBSessionConfiguration(Store));
+}
+</code></pre></td></tr></table>
+<p>Note that we've moved index creation to application startup; configuring the container simply registers the dependency. Also, since <code>ApplicationStartup</code> also provides the container, we could have registered the store without the <code>private static</code> property, then used <code>var store = container.Resolve&lt;IDocumentStore&gt;();</code> in the startup method to obtain its instance.</p>
+<p>At this point, we should be able to start the application, then use RavenDB Studio to look at the indexes for the <code>O2F2</code> database; if you find <code>Sessions/ByLastAccessed</code>, the session store has been initialized successfully.</p>
+<h4><a name="Data-Seeding" class="anchor" href="#Data-Seeding">Data Seeding</a></h4>
+<p>As with <strong>Uno</strong>, we'll make an endpoint on our <code>HomeModule</code> to seed the data, which we can delete when we get to step 5. Rather than go through it here, you can <a href="https://github.com/bit-badger/o2f/tree/master/src/2-Dos/Modules/HomeModule.cs#L17">view the completed method</a> to see the hard-coded values we're storing. Notice that we provided an instance of <code>IDocumentStore</code> in the constructor; TinyIoC will resolve that for us and provide us with the instance we registered in our bootstrapper.</p>
+<p>Run the application, then visit <a href="http://localhost:5000/seed;">http://localhost:5000/seed;</a> you should see "All done!". At that point, you should also be able to use RavenDB Studio to look at the documents that were added during this step.</p>
+<h4><a name="Conclusion" class="anchor" href="#Conclusion">Conclusion</a></h4>
+<p>There was a lot less to do in this step for Nancy than there was for ASP.NET Core MVC. However, as we're using most of the defaults for Nancy and our session store, the SDHP helps us write less code. Also, we haven't set up anything for the Super Simple View Engine at this step, as we're returning strings right now from our module endpoints; we'll tackle that during step 6.</p>
+<hr />
+<p><a href="../step4">Back to step 4</a></p>
+
+
+        </div>
+        <div class="span3">
+          <img src="/img/logo.png" alt="F# Project" style="width:150px;margin:10px" />  
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">objects |> functions</li>
+            <li><a href="/index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="https://github.com/bit-badger/o2f">Source Code on GitHub</a></li>
+            <li><a href="/license.html">License</a></li>
+            <li class="divider"></li>
+            <li class="nav-header">Steps</li>
+            <li><a href="/step0.html"><strong>0 |> Environment</strong></a></li>
+            <li><a href="/step1/"><strong>1 |> Hello World</strong></a></li>
+            <li><a href="/step2/"><strong>2 |> Data Model</strong></a></li>
+            <li><a href="/step3/"><strong>3 |> RavenDB Connection</strong></a></li>
+            <li><a href="/step4/"><strong>4 |> Framework Setup</strong></a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="https://github.com/bit-badger/o2f"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+  </body>
+  </html>
