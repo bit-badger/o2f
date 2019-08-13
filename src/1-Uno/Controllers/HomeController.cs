@@ -11,7 +11,6 @@ namespace Uno.Controllers
 {
     public class HomeController : Controller
     {
-        [HttpGet("")]
         public IActionResult Index() {
             HttpContext.Session.SetInt32("Count", (HttpContext.Session.GetInt32("Count") ?? 0) + 1);
             ViewData["Count"] = HttpContext.Session.GetInt32("Count");

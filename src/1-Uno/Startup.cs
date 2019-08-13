@@ -2,10 +2,14 @@ using AspNetCore.DistributedCache.RavenDB;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Indexes;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using Uno.Data.Indexes;
 
@@ -68,25 +72,25 @@ namespace Uno
             }
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-            // app.Use(async (context, next) =>
-            // {
-            //     System.Console.WriteLine("After static files, before session");
-            //     await next.Invoke();
-            //     System.Console.WriteLine("coming back - After session, before static files");
-            // });
             // app.UseSession();
-            // app.Use(async (context, next) =>
-            // {
-            //     System.Console.WriteLine("After session, before MVC");
-            //     await next.Invoke();
-            //     System.Console.WriteLine("coming back - After MVC, before session");
-            // });
-            app.UseMvcWithDefaultRoute();
             app.Use(async (context, next) =>
             {
-                System.Console.WriteLine("After MVC");
+                var p = context.RequestServices.GetRequiredService(typeof(IActionDescriptorCollectionProvider))
+                    as IActionDescriptorCollectionProvider;
+
+                System.Console.WriteLine("Here come the routes");
+                foreach (var x in p.ActionDescriptors.Items)
+                {
+                    System.Console.WriteLine("Action = {0} | Controller = {1} | Name = {2} | Template = {3} | Constraint = {4}",
+                        x.RouteValues["Action"],  x.RouteValues["Controller"],  x.AttributeRouteInfo?.Name,
+                        x.AttributeRouteInfo?.Template,
+                        x.ActionConstraints == null ? "" : JsonConvert.SerializeObject(x.ActionConstraints));
+                }
                 await next.Invoke();
-                System.Console.WriteLine("coming back - Before MVC");
+            });
+            app.UseMvc(routes =>
+            {
+                routes.MapRoute(name: "default", template: "{controller=Home}/{action=Index}/{id?}");
             });
         }
     }
