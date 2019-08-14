@@ -22,6 +22,7 @@ namespace Uno.Controllers
             View(null, string.Format("Error {0}, Request ID {1}", HttpContext.Response.StatusCode,
                 Activity.Current?.Id ?? HttpContext.TraceIdentifier));
 
+        [HttpGet("/seed")]
         public async Task<IActionResult> Seed()
         {
             string newId(string collection) => $"{collection}/{Guid.NewGuid().ToString("N")}";
@@ -239,7 +240,6 @@ namespace Uno.Controllers
                 await sess.SaveChangesAsync();
             }
 
-            Response.StatusCode = StatusCodes.Status200OK;
             return Content("All done!");
         }
     }

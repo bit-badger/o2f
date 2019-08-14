@@ -13,20 +13,14 @@ namespace Uno
 {
     public class Startup
     {
-        public static IConfiguration Configuration { get; private set; }
+        private IConfiguration Configuration { get; set; }
 
-        private IHostingEnvironment Env { get; set; }
+        private IHostingEnvironment Environment { get; set; }
         
         public Startup(IHostingEnvironment env, IConfiguration cfg)
         {
             Configuration = cfg;
-            // new ConfigurationBuilder()
-            //     .SetBasePath(env.ContentRootPath)
-            //     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            //     .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
-            //     .AddEnvironmentVariables()
-            //     .Build();
-            Env = env;
+            Environment = env;
         }
 
         public void ConfigureServices(IServiceCollection services)
@@ -43,7 +37,7 @@ namespace Uno
             }.Initialize();
             IndexCreation.CreateIndexes(typeof(Categories_ByWebLogIdAndSlug).Assembly, store);
             
-            services.AddSingleton(store)
+            _ = services.AddSingleton(store)
                 .AddDistributedRavenDBCache(options => options.Store = store)
                 .AddSession(options =>
                 {
@@ -55,7 +49,9 @@ namespace Uno
         }
 
         public void Configure(IApplicationBuilder app) =>
-            (Env.IsDevelopment() ? app.UseDeveloperExceptionPage() : app.UseExceptionHandler("/Home/Error"))
+            _ = (Environment.IsDevelopment()
+                    ? app.UseDeveloperExceptionPage()
+                    : app.UseExceptionHandler("/Home/Error"))
                 .UseHttpsRedirection()
                 .UseStaticFiles()
                 .UseSession()

@@ -33,7 +33,6 @@
         <div class="span9" id="main">
           
 <h3><a name="Uno-Step-4" class="anchor" href="#Uno-Step-4">Uno - Step 4</a></h3>
-<p><strong>NOTE: This page is a draft: following these directions at this point does not result in a working application. <a href="./dos.html">Dos</a> and <a href="./tres.html">Tres</a> are complete, though, if you want to take a look at them.</strong></p>
 <h4><a name="Dependencies" class="anchor" href="#Dependencies">Dependencies</a></h4>
 <p>If you remember all the way back to <a href="../step1/uno.html">step 1</a>, we only pulled in the ASP.NET Core packages we needed to do our "Hello World" app. At this point, though, we'll go ahead and bring in the entire <code>Microsoft.AspNetCore.App</code> meta-package, which will install a whole lot more, including the Razor templating engine.</p>
 <p>In <code>paket.dependencies</code>, in the root of the solution folder, replace the following...</p>
@@ -58,9 +57,11 @@
 </code></pre></td>
 </tr>
 </table>
-<p>In addition, add <code>nuget AspNetCore.DistributedCache.RavenDB</code>. Then, make the same changes in <code>paket.references</code> for Uno, then run <code>paket install</code>.</p>
+<p>In addition, add <code>nuget AspNetCore.DistributedCache.RavenDB</code>. Make these same changes in <code>paket.references</code> for Uno as well.</p>
+<p>We'll also need to make one small change to <code>Uno.csproj</code>*. On the second line, add <code>.Web</code> to the <code>Sdk</code> attribute on the project; the entire <code>Sdk</code> should read <code>Microsoft.NET.Sdk.Web</code>.</p>
+<p>Finally, run <code>paket install</code>. to update the dependencies.</p>
 <h4><a name="The-File" class="anchor" href="#The-File">The <code>Startup.cs</code> File</a></h4>
-<p>To begin, we'll actually simply the file; the code that we put in the constructor is actually <a href="https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-2.2#default-configuration">the way ASP.NET Core 2.2 works out-of-the-box</a>. Instead, we can make one tweak to our private property, and have it injected into the constructor. We'll go from...</p>
+<p>To begin, we'll actually simply the file; the code that we put in the constructor is actually <a href="https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-2.2#default-configuration">the way ASP.NET Core 2.2 works out-of-the-box</a>. Instead, we can change our private property, add one for the hosting environment, and have them both injected into the constructor. We'll go from...</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
 <span class="l"> 2: </span>
 <span class="l"> 3: </span>
@@ -92,12 +93,18 @@
 <span class="l">4: </span>
 <span class="l">5: </span>
 <span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
+<span class="l">9: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp"><span class="k">public</span> <span class="k">static</span> IConfiguration Configuration { get; <span class="k">private</span> set; }
+<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp"><span class="k">private</span> IConfiguration Configuration { get; set; }
 
-<span class="k">public</span> Startup(IConfiguration cfg)
+<span class="k">private</span> IHostingEnvironment Environment { get; set; }
+    
+<span class="k">public</span> Startup(IHostingEnvironment env, IConfiguration cfg)
 {
     Configuration <span class="o">=</span> cfg;
+    Environment <span class="o">=</span> env;
 }
 </code></pre></td></tr></table>
 <p>Next, we'll turn our attention to <code>ConfigureServices</code>. Here, we'll configure our session provider, as well as bring in the MVC setup. We're also going to adapt our RavenDB connection. If we configure a server that listens on anything other than 127.0.0.1 (localhost), RavenDB insists on using a client certificate to ensure a secure connection between client and server. Our current configuration does not support it; when we're done, we'll support loading a <code>.pfx</code> file from a configured path.</p>
@@ -126,6 +133,11 @@
 <span class="l">22: </span>
 <span class="l">23: </span>
 <span class="l">24: </span>
+<span class="l">25: </span>
+<span class="l">26: </span>
+<span class="l">27: </span>
+<span class="l">28: </span>
+<span class="l">29: </span>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="csharp"><span class="c">// new usings</span>
 <span class="k">using</span> AspNetCore.DistributedCache.RavenDB;
@@ -148,44 +160,39 @@
         
     _ <span class="o">=</span> services.AddSingleton(store)
         .AddDistributedRavenDBCache(options <span class="o">=</span><span class="o">&gt;</span> options.Store <span class="o">=</span> store)
-        .AddSession()
-        .AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_<span class="n">2</span>_<span class="n">2</span>);
+        .AddSession(options <span class="o">=</span><span class="o">&gt;</span>
+        {
+            options.Cookie.Name <span class="o">=</span> <span class="s">".Uno.Session"</span>;
+            options.Cookie.IsEssential <span class="o">=</span> <span class="k">true</span>;
+        })
+        .AddMvc()
+            .SetCompatibilityVersion(CompatibilityVersion.Version_<span class="n">2</span>_<span class="n">2</span>);
 }
 </code></pre></td></tr></table>
-<p>We've added the certificate check to the store, and instead of registering the result of <code>.Initialize()</code>, we're making that the value of <code>store</code>. This lets us use the initialized store in index creation, as well as in setting up the distributed cache. The chain on <code>services</code> is also new. Most calls to <code>.Add*</code> methods return the modified service collection, so we can chain several calls together instead of writing <code>services.Add...</code> over and over. The exception to this is our last call, which is why it's last.</p>
-<p>Finally, let's turn our attention to the <code>Configure</code> method. Just like we ended up with a chain of calls for services, we're going to have the same thing on our application builder. In fact, it ends up being just one chain, so we can still use the expression-bodied member syntax!</p>
-<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
-<span class="l"> 2: </span>
-<span class="l"> 3: </span>
-<span class="l"> 4: </span>
-<span class="l"> 5: </span>
-<span class="l"> 6: </span>
-<span class="l"> 7: </span>
-<span class="l"> 8: </span>
-<span class="l"> 9: </span>
-<span class="l">10: </span>
-<span class="l">11: </span>
-<span class="l">12: </span>
-<span class="l">13: </span>
+<p>We've added the certificate check to the store, and instead of registering the result of <code>.Initialize()</code>, we're making that the value of <code>store</code>. This lets us use the initialized store in index creation, as well as in setting up the distributed cache. The chain on <code>services</code> is also new. Most calls to <code>.Add*</code> methods return the modified service collection, so we can chain several calls together instead of writing <code>services.Add...</code> over and over. The exception to this is our last call, which is why it's last (and indented another layer, though that's just an aesthetic thing).</p>
+<p>Finally, let's turn our attention to the <code>Configure</code> method. Since we made a private property for the <code>IHostingEnvironment</code> parameter, we can remove it from the parameter list. And, just like we ended up with a chain of calls for services, we're going to have the same thing on our application builder. In fact, it ends up being just one chain, so we can still use the expression-bodied member syntax!</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+<span class="l">6: </span>
+<span class="l">7: </span>
+<span class="l">8: </span>
 </pre></td>
-<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp"><span class="k">public</span> <span class="k">void</span> Configure(IApplicationBuilder app, IHostingEnvironment env) <span class="o">=</span><span class="o">&gt;</span>
-    _ <span class="o">=</span> (env.IsDevelopment()
+<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp"><span class="k">public</span> <span class="k">void</span> Configure(IApplicationBuilder app) <span class="o">=</span><span class="o">&gt;</span>
+    _ <span class="o">=</span> (Environment.IsDevelopment()
             <span class="o">?</span> app.UseDeveloperExceptionPage()
             <span class="o">:</span> app.UseExceptionHandler(<span class="s">"/Home/Error"</span>))
         .UseHttpsRedirection()
         .UseStaticFiles()
         .UseSession()
-        .UseMvc(routes <span class="o">=</span><span class="o">&gt;</span>
-        {
-            routes.MapRoute(
-                name: <span class="s">"default"</span>,
-                template: <span class="s">"{controller=Home}/{action=Index}/{id?}"</span>);
-        });
+        .UseMvcWithDefaultRoute();
 </code></pre></td></tr></table>
-<p>The first expression uses the developer exception page if we're running in development; this gives us as developers a lot of information, stack traces, and such when an error occurs. In production mode, we don't want that, though, so we'll use the exception handler <code>/Home/Error</code>. (We'll write that below.) <code>.UseHttpsRedirection</code> means that we'll be redirected from HTTP to HTTPS (and, in our default configuration, from port 5000 to 5001) automatically. <code>.UseStaticFiles</code> lets us serve static files out of our <code>wwwroot</code> directory. <code>.UseSession</code> is paired with <code>.AddSession</code> from above to actually implement it into the pipeline; by putting it after the static file middleware, static files will not require a session (which is what we want). Finally, <code>.UseMvc</code> sets up our MVC route template.</p>
+<p>The first expression uses the developer exception page if we're running in development; this gives us as developers a lot of information, stack traces, and such when an error occurs. In production mode, we don't want that, though, so we'll use the exception handler <code>/Home/Error</code>. (We'll write that below.) <code>.UseHttpsRedirection</code> means that we'll be redirected from HTTP to HTTPS (and, in our default configuration, from port 5000 to 5001) automatically. <code>.UseStaticFiles</code> lets us serve static files out of our <code>wwwroot</code> directory. <code>.UseSession</code> is paired with <code>.AddSession</code> from above to actually implement it into the pipeline; by putting it after the static file middleware, static files will not require a session (which is what we want). Finally, <code>.UseMvcWithDefaultRoute</code> sets up MVC to use a route template of <code>/[controller]/[action]/[id?]</code>, and also scans for attribute routes (more on that below).</p>
 <h4><a name="Controllers-etc" class="anchor" href="#Controllers-etc">Controllers, etc.</a></h4>
-<p>If you look at the last code sample above, you can see two controller actions on the <code>Home</code> controller; <code>/Error</code> for the exception handler, and <code>/Index</code> for the default action. By convention, ASP.MVC Core expects controllers to be in the <code>Controllers</code> directory and namespace, to be named <code>*Controller</code> (where, in this case, <code>*</code> is <code>Home</code>), and to inherit from the <code>Controller</code> base class (from <code>Microsoft.AspNetCore.Mvc</code>).</p>
-<p>Create a <code>Controllers</code> directory, then create a <code>HomeController.cs</code> file. We'll use the <code>Content</code> return to create a skeleton of this file.</p>
+<p>If you look at the last code sample above, you can see two controller actions on the <code>Home</code> controller; <code>/Error</code> for the exception handler, and <code>/Index</code> for the default action. By convention, ASP.MVC Core expects controllers to be named <code>*Controller</code> (where, in this case, <code>*</code> is <code>Home</code>), and to inherit from the <code>Controller</code> base class (from <code>Microsoft.AspNetCore.Mvc</code>). By tradition, these are in a <code>Controllers</code> directory and namespace as well; there are reasons to <em>not</em> do this, but for our purposes here, we'll stick with the familiar layout.</p>
+<p>Create a <code>Controllers</code> directory, then create a <code>HomeController.cs</code> file.</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l"> 1: </span>
 <span class="l"> 2: </span>
 <span class="l"> 3: </span>
@@ -202,7 +209,6 @@
 <span class="l">14: </span>
 <span class="l">15: </span>
 <span class="l">16: </span>
-<span class="l">17: </span>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="csharp"><span class="k">using</span> Microsoft.AspNetCore.Mvc;
 <span class="k">using</span> System.Diagnostics;
@@ -212,17 +218,16 @@
     <span class="k">public</span> <span class="k">class</span> HomeController <span class="o">:</span> Controller
     {
         <span class="k">public</span> IActionResult Index() <span class="o">=</span><span class="o">&gt;</span>
-            Content(<span class="s">"The index"</span>);
+            View();
 
         [ResponseCache(Duration <span class="o">=</span> <span class="n">0</span>, Location <span class="o">=</span> ResponseCacheLocation.None, NoStore <span class="o">=</span> <span class="k">true</span>)]
         <span class="k">public</span> IActionResult Error() <span class="o">=</span><span class="o">&gt;</span>
-            Content(<span class="k">string</span>.Format(<span class="s">"Error {0}, Request ID {1}"</span>, HttpContext.Response.StatusCode,
+            View(<span class="k">null</span>, <span class="k">string</span>.Format(<span class="s">"Error {0}, Request ID {1}"</span>, HttpContext.Response.StatusCode,
                 Activity.Current?.Id <span class="o">?</span><span class="o">?</span> HttpContext.TraceIdentifier));
-
     }
 }
 </code></pre></td></tr></table>
-<p>It's not much, but it doesn't require views, which we're not writing for a few steps. Speaking of views, though, there is some framework we can set up for them. Create a <code>Views</code> folder in the root of the application, then navigate there using a command prompt or shell. Execute the following two commands in that directory:</p>
+<p>It's not much, but it does require views for these two actions. We're not writing views for a few steps, but this will give us a chance to set up the framework for them. Create a <code>Views</code> folder in the root of the application, then navigate there using a command prompt or shell. Execute the following two commands in that directory:</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
 <span class="l">2: </span>
 </pre></td>
@@ -256,6 +261,7 @@
 <span class="k">&lt;/</span><span class="i">body</span><span class="k">&gt;</span>
 <span class="k">&lt;/</span><span class="i">html</span><span class="k">&gt;</span>
 </code></pre></td></tr></table>
+<p>Finally, while not covered here, we'll create very simple views for these two actions. You can <a href="https://github.com/bit-badger/o2f/tree/master/src/1-Uno/Views">review those</a> if you want to see what they look like (<code>Index</code> is in <code>/Home</code>, <code>Error</code> is in <code>/Shared</code>).</p>
 <h4><a name="Testing" class="anchor" href="#Testing">Testing</a></h4>
 <p>One thing we can test at this point is our sessions; are they working correctly? If we change <code>HomeController.Index</code> to look like this...</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
@@ -265,22 +271,32 @@
 <span class="l">5: </span>
 <span class="l">6: </span>
 <span class="l">7: </span>
+<span class="l">8: </span>
 </pre></td>
 <td class="snippet"><pre class="fssnip highlighted"><code lang="csharp"><span class="c">// add</span>
 <span class="k">using</span> Microsoft.AspNetCore.Http;
 <span class="c">// ...</span>
     <span class="k">public</span> IActionResult Index() {
         HttpContext.Session.SetInt<span class="n">32</span>(<span class="s">"Count"</span>, (HttpContext.Session.GetInt<span class="n">32</span>(<span class="s">"Count"</span>) <span class="o">?</span><span class="o">?</span> <span class="n">0</span>) <span class="o">+</span> <span class="n">1</span>);
-        <span class="k">return</span> Content($<span class="s">"You have viewed this index {HttpContext.Session.GetInt32("</span>Count<span class="s">")} times this session"</span>);
+        ViewData[<span class="s">"Count"</span>] <span class="o">=</span> HttpContext.Session.GetInt<span class="n">32</span>(<span class="s">"Count"</span>);
+        <span class="k">return</span> View();
     }
 </code></pre></td></tr></table>
 <p>...we can view the page, refresh it, and watch the counter increase. We can also look in RavenDB and see the <code>CacheEntries</code> collection document being changed. The data in it is base-64 encoded, so we can't read it, but we can see the update and expiration changing. Using an incognito or private browser tab will be best, as the session cookie will go away once you close it.</p>
 <h4><a name="Data-Seeding" class="anchor" href="#Data-Seeding">Data Seeding</a></h4>
-<p>One final task we have to do is seed our test data. We'll do this procedurally in a method on <code>HomeController</code>, which we'll delete the next time we open it in the next step.</p>
+<p>One final task we have to do is seed our test data. We'll do this procedurally in a method on <code>HomeController</code>, which we'll delete the next time we open it in the next step. However, the definition of this action gives us a chance to talk about attribute routing.</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp">[HttpGet(<span class="s">"/seed"</span>)]
+<span class="k">public</span> <span class="k">async</span> Task&lt;IActionResult&gt; Seed()
+</code></pre></td></tr></table>
+<p>That <code>HttpGet</code> attribute overrides the default route. So, while the URL for this action <em>would</em> have been <code>/Home/Seed</code>, it's now simply <code>/seed</code>. We can also use the <code>Route</code> attribute at the controller level (to set a base for all the routes in that controller) or on an action, if we want it to support all HTTP verbs. Most of our routes will be defined this way, as it gives us a chance to make the URLs exactly what we want.</p>
 <h4><a name="Conclusion" class="anchor" href="#Conclusion">Conclusion</a></h4>
-<p>This is probably one of the most plumbing-like steps in the</p>
+<p>This is probably one of the most plumbing-like steps in the process, but we've really done a lot in this step. And, if we had just started with the full ASP.NET Core framework in the beginning, nearly all the files we've created would have been part of the output from <code>dotnet new</code>. However, we now know what each of the parts do, so if we need to change them, we're more likely to know what needs to be changed.</p>
 <hr />
 <p><a href="../step4">Back to step 4</a></p>
+<p>* Thanks to Christopher Prichard in the F# community Slack for helping to identify this; without <code>.Web</code>, the MVC routes were not picked up, and every route returned a 404.</p>
 
 <div class="tip" id="fs1">namespace Microsoft</div>
 
