@@ -182,4 +182,4 @@ This is probably one of the most plumbing-like steps in the process, but we've r
 ----
 [Back to step 4](../step4)
 
-\* Thanks to Christopher Prichard in the F# community Slack for helping to identify this; without `.Web`, the MVC routes were not picked up, and every route returned a 404.
+\* Thanks to Christopher Pritchard in the F# community Slack for helping to identify this; without `.Web`, the MVC routes were not picked up, and every route returned a 404.
