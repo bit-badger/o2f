@@ -2,6 +2,7 @@ namespace Tres
 
 open FSharp.Control.Tasks.V2.ContextInsensitive
 open Nancy
+open Nancy.Session.Persistable
 open Raven.Client.Documents
 open System
 open Tres.Domain
@@ -200,6 +201,12 @@ type HomeModule (store : IDocumentStore) as this =
     |> Threading.Tasks.Task.FromResult   
   
   do
-    this.Get("/",     fun _ -> "Hello World from Nancy F#")
+    this.Get("/", fun _ ->
+        let count =
+          (this.Request.PersistableSession.Get<Nullable<int>> "Count"
+           |> Option.ofNullable
+           |> function Some x -> x | None -> 0) + 1
+        this.Request.PersistableSession.["Count"] <- count
+        (sprintf "You have visited this page %i times this session" count) :> obj)
     this.Get("/seed", fun _ -> seed ())
 

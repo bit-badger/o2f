@@ -112,6 +112,21 @@
 </code></pre></td></tr></table>
 <p>Note that we've moved index creation to application startup; configuring the container simply registers the dependency. Also, since <code>ApplicationStartup</code> also provides the container, we could have registered the store without the <code>private static</code> property, then used <code>var store = container.Resolve&lt;IDocumentStore&gt;();</code> in the startup method to obtain its instance.</p>
 <p>At this point, we should be able to start the application, then use RavenDB Studio to look at the indexes for the <code>O2F2</code> database; if you find <code>Sessions/ByLastAccessed</code>, the session store has been initialized successfully.</p>
+<h4><a name="Testing" class="anchor" href="#Testing">Testing</a></h4>
+<p>We can easily create a home page counter, like we did for <strong>Uno</strong>. In <code>HomeModule.cs</code>, add <code>using Nancy.Session.Persistable;</code> to the top; this exposes the <code>PersistableSession()</code> extension method on Nancy's <code>Request</code> object. This view of the session will allow us to get strongly-typed items from the session. This allows us to change the function mapped to <code>/</code> to:</p>
+<table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
+<span class="l">2: </span>
+<span class="l">3: </span>
+<span class="l">4: </span>
+<span class="l">5: </span>
+</pre></td>
+<td class="snippet"><pre class="fssnip highlighted"><code lang="csharp">Get(<span class="s">"/"</span>, _ <span class="o">=</span><span class="o">&gt;</span> {
+    <span class="k">var</span> count <span class="o">=</span> (Request.PersistableSession().Get&lt;<span class="k">int</span>?<span class="o">&gt;</span>(<span class="s">"Count"</span>) <span class="o">?</span><span class="o">?</span> <span class="n">0</span>) <span class="o">+</span> <span class="n">1</span>;
+    Request.PersistableSession()[<span class="s">"Count"</span>] <span class="o">=</span> count;
+    <span class="k">return</span> $<span class="s">"You have visited this page {count} times this session"</span>;
+});
+</code></pre></td></tr></table>
+<p>If you run the site, you should be able to refresh and see the counter grow. You should also be able to look at the most recently updated session document in RavenDB Studio, and see the <code>"Count"</code> property in the data for that session.</p>
 <h4><a name="Data-Seeding" class="anchor" href="#Data-Seeding">Data Seeding</a></h4>
 <p>As with <strong>Uno</strong>, we'll make an endpoint on our <code>HomeModule</code> to seed the data, which we can delete when we get to step 5. Rather than go through it here, you can <a href="https://github.com/bit-badger/o2f/tree/master/src/2-Dos/Modules/HomeModule.cs#L17">view the completed method</a> to see the hard-coded values we're storing. Notice that we provided an instance of <code>IDocumentStore</code> in the constructor; TinyIoC will resolve that for us and provide us with the instance we registered in our bootstrapper.</p>
 <p>Run the application, then visit <a href="http://localhost:5000/seed;">http://localhost:5000/seed;</a> you should see "All done!". At that point, you should also be able to use RavenDB Studio to look at the documents that were added during this step.</p>

@@ -124,6 +124,35 @@ Now, we can chage `ConfigureApplicationContainer` and bring across `ApplicationS
 (**
 These are the same chages, just translated to F#.
 
+#### Testing
+
+As with **Dos**, we need to bring in the session extension method. Add `open Nancy.Session.Persistable` to the group of
+`open` statements. C# only lets you define extension methods; however, F# allows you to define properties as well, so
+`PersistableSession` is implemented as a _property_ on Nancy's `Request` object. Then, we translate the function:
+*)
+(*** hide ***)
+open System
+type HomeModule () as this =
+  inherit NancyModule ()
+  do
+(** *)
+    this.Get("/", fun _ ->
+        let count =
+          (this.Request.PersistableSession.Get<Nullable<int>> "Count"
+           |> Option.ofNullable
+           |> function Some x -> x | None -> 0) + 1
+        this.Request.PersistableSession.["Count"] <- count
+        (sprintf "You have visited this page %i times this session" count) :> obj)
+(**
+
+Since F# is designed to use `Option`s to represent a value that may or may not be present (rather than `null` checks),
+but Nancy's sessions are designed to return `null` if a value isn't found, this is a bit more work. We have to specify
+the full type (`Nullable<int>`), as F# doesn't support the trailing question mark syntax. Then, we use the `Option`
+module's `ofNullable` function to convert a nullable value into an option. Finally, we use an inline function, which
+behaves the same way as a `match` statement on the value it receives via the pipe operator.
+
+As with **Uno** and **Dos**, if you run the site, you should be able to refresh and see the counter increase.
+
 #### Data Seeding
 
 The bulk of this process is simply bringing over the `HomeModule.Seed` method from **Dos**. However, before we take a

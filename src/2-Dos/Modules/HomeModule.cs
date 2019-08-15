@@ -1,6 +1,7 @@
 using Dos.Data;
 using Dos.Domain;
 using Nancy;
+using Nancy.Session.Persistable;
 using Raven.Client.Documents;
 using System;
 using System.Threading.Tasks;
@@ -11,7 +12,11 @@ namespace Dos.Modules
     {
         public HomeModule(IDocumentStore store) : base()
         {
-            Get("/", _ => "Hello World from Nancy C#");
+            Get("/", _ => {
+                var count = (Request.PersistableSession().Get<int?>("Count") ?? 0) + 1;
+                Request.PersistableSession()["Count"] = count;
+                return $"You have visited this page {count} times this session";
+            });
             Get("/seed", _ => Seed(store));
         }
         private async Task<string> Seed(IDocumentStore store)

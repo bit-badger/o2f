@@ -60,6 +60,19 @@ Note that we've moved index creation to application startup; configuring the con
 
 At this point, we should be able to start the application, then use RavenDB Studio to look at the indexes for the `O2F2` database; if you find `Sessions/ByLastAccessed`, the session store has been initialized successfully.
 
+#### Testing
+
+We can easily create a home page counter, like we did for **Uno**. In `HomeModule.cs`, add `using Nancy.Session.Persistable;` to the top; this exposes the `PersistableSession()` extension method on Nancy's `Request` object. This view of the session will allow us to get strongly-typed items from the session. This allows us to change the function mapped to `/` to:
+
+    [lang=csharp]
+    Get("/", _ => {
+        var count = (Request.PersistableSession().Get<int?>("Count") ?? 0) + 1;
+        Request.PersistableSession()["Count"] = count;
+        return $"You have visited this page {count} times this session";
+    });
+
+If you run the site, you should be able to refresh and see the counter grow. You should also be able to look at the most recently updated session document in RavenDB Studio, and see the `"Count"` property in the data for that session.
+
 #### Data Seeding
 
 As with **Uno**, we'll make an endpoint on our `HomeModule` to seed the data, which we can delete when we get to step 5. Rather than go through it here, you can [view the completed method](https://github.com/bit-badger/o2f/tree/master/src/2-Dos/Modules/HomeModule.cs#L17) to see the hard-coded values we're storing. Notice that we provided an instance of `IDocumentStore` in the constructor; TinyIoC will resolve that for us and provide us with the instance we registered in our bootstrapper.
