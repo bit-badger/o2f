@@ -212,7 +212,7 @@ type Post =
     AuthorId    : UserId
     Status      : PostStatus
     Title       : string
-    Permalink   : string
+    Permalink   : Permalink
     PublishedOn : Ticks
     UpdatedOn   : Ticks
     Text        : ArticleContent
@@ -227,7 +227,7 @@ with
       AuthorId    = UserId ""
       Status      = Draft
       Title       = ""
-      Permalink   = ""
+      Permalink   = Permalink ""
       PublishedOn = Ticks 0L
       UpdatedOn   = Ticks 0L
       Text        = Html ""

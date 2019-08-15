@@ -7,12 +7,14 @@ open Microsoft.AspNetCore.Hosting
 [<RequireQualifiedAccess>]
 module Configure =
   
+  open AspNetCore.DistributedCache.RavenDB
   open Indexes
   open Microsoft.Extensions.Configuration
   open Microsoft.Extensions.DependencyInjection
   open Microsoft.FSharpLu.Json
   open Raven.Client.Documents
   open Raven.Client.Documents.Indexes
+  open System.Security.Cryptography.X509Certificates
   
   let configuration (ctx : WebHostBuilderContext) (cfg : IConfigurationBuilder) =
     cfg.SetBasePath(ctx.HostingEnvironment.ContentRootPath)
@@ -24,15 +26,31 @@ module Configure =
   let services (svc : IServiceCollection) =
     let config = svc.BuildServiceProvider().GetRequiredService<IConfiguration> ()
     let cfg = config.GetSection "RavenDB"
-    let store = new DocumentStore (Urls = [| cfg.["Url"] |], Database = cfg.["Database"])
-    store.Conventions.CustomizeJsonDeserializer <-
-      fun x ->
-          x.Converters.Add (CompactUnionJsonConverter ())
-    svc.AddSingleton (store.Initialize ()) |> ignore
+    let store =
+      let st =
+        new DocumentStore
+         (Urls = [| cfg.["Url"] |],
+          Database = cfg.["Database"],
+          Certificate =
+            match cfg.["Certificate"] with
+            | null -> null
+            | _ -> new X509Certificate2 (cfg.["Certificate"], cfg.["Password"]))
+      st.Conventions.CustomizeJsonDeserializer <-
+        fun x ->
+            x.Converters.Add (CompactUnionJsonConverter ())
+      st.Initialize ()
     IndexCreation.CreateIndexes (typeof<Categories_ByWebLogIdAndSlug>.Assembly, store)
+    svc.AddSingleton(store)
+      .AddDistributedRavenDBCache(fun opts -> opts.Store <- store)
+      .AddSession
+       (fun opts ->
+            opts.Cookie.Name        <- ".Quatro.Session"
+            opts.Cookie.IsEssential <- true)
+    |> ignore
 
   let app (app : IApplicationBuilder) =
-    app.UseGiraffe (htmlString "Hello World from Giraffe")
+    app.UseSession()
+      .UseGiraffe (htmlString "Hello World from Giraffe")
 
 [<EntryPoint>]
 let main _ =

@@ -1,7 +1,9 @@
+AspNetCore.DistributedCache.RavenDB
 Giraffe
 MarkdownSharp
 Microsoft.AspNetCore.Hosting
 Microsoft.AspNetCore.Server.Kestrel
+Microsoft.AspNetCore.Session
 Microsoft.Extensions.Configuration.FileExtensions
 Microsoft.Extensions.Configuration.Json
 Microsoft.Extensions.Options.ConfigurationExtensions
