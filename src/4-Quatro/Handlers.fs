@@ -22,12 +22,10 @@ let seed : HttpHandler =
       let subDays nbr ts =
         let (Ticks x) = ts
         x - (TimeSpan (nbr, 0, 0, 0)).Ticks |> Ticks
-
-      use sess = (ctx.GetService<IDocumentStore> ()).OpenAsyncSession ()
-      
       task {
+        use sess = (ctx.GetService<IDocumentStore> ()).OpenAsyncSession ()
         // Web log
-        let webLogId = (Guid.NewGuid >> WebLogId.create) ()
+        let webLogId = WebLogId.create ()
         
         do!
           sess.StoreAsync 
@@ -41,9 +39,9 @@ let seed : HttpHandler =
               }
 
         // Categories
-        let catNewsId   = (Guid.NewGuid >> CategoryId.create) ()
-        let catSportsId = (Guid.NewGuid >> CategoryId.create) ()
-        let catCatsId   = (Guid.NewGuid >> CategoryId.create) ()
+        let catNewsId   = CategoryId.create ()
+        let catSportsId = CategoryId.create ()
+        let catCatsId   = CategoryId.create ()
 
         do!
           sess.StoreAsync
@@ -77,7 +75,7 @@ let seed : HttpHandler =
               }
 
         // Users / Authors
-        let userId = (Guid.NewGuid >> UserId.create) ()
+        let userId = UserId.create ()
 
         do!
           sess.StoreAsync
@@ -92,7 +90,7 @@ let seed : HttpHandler =
               }
 
         // Pages
-        let aboutId  = (Guid.NewGuid >> PageId.create) ()
+        let aboutId  = PageId.create ()
         let aboutNow = now ()
 
         do!
@@ -113,7 +111,7 @@ let seed : HttpHandler =
                 ]
               }
 
-        let contactId  = (Guid.NewGuid >> PageId.create) ()
+        let contactId  = PageId.create ()
         let contactNow = now ()
 
         do!
@@ -131,7 +129,7 @@ let seed : HttpHandler =
               }
 
         // Posts
-        let postNews1Id  = (Guid.NewGuid >> PostId.create) ()
+        let postNews1Id  = PostId.create ()
         let postNews1Now = now ()
 
         do!
@@ -153,7 +151,7 @@ let seed : HttpHandler =
                 ]
               }
 
-        let postNews2Id   = (Guid.NewGuid >> PostId.create) ()
+        let postNews2Id   = PostId.create ()
         let postNews2Now  = (now >> subDays 7) ()
         let postNews2Text = "In a historic, never-before-seen circumstance, the presidential election ended in a tie. The Constitution does not provide for any sort of tie-breaker, so the Supreme Court has ruled that neither party has won. Surprisingly, the candidates believe this may be the best thing for the country; one of them was quoted as saying, \"Last month, one of my competitors called Congress a 'do-nothing Congress', and the next day, their approval rating had actually gone **up** 5 points. It's like the American people just want us to leave them alone, and they couldn't have sent a clearer message with today's results.\" Americans are generally optimistic about the next 4 years with no leader in the White House, though they remain apprehensive that, without the responsibility of actually governing, the candidates will just continue campaigning for another 4 years."
 
@@ -173,7 +171,7 @@ let seed : HttpHandler =
               Revisions   = [ { AsOf = postNews2Now; Text = Markdown postNews2Text } ]
               }
 
-        let postSportsId  = (Guid.NewGuid >> PostId.create) ()
+        let postSportsId  = PostId.create ()
         let postSportsNow = (now >> subDays 10) ()
 
         do!

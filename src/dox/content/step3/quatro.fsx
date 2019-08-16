@@ -26,7 +26,7 @@ references as well. The new references are:
     Microsoft.Extensions.Options.ConfigurationExtensions
     RavenDb.Client
 
-The, run `paket install` to register these as as part of this project.
+Then, run `paket install` to register these as as part of this project.
 
 #### Configuring the Connection and Dependency Injection
 

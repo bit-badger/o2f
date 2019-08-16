@@ -8,4 +8,5 @@ Microsoft.Extensions.Configuration.FileExtensions
 Microsoft.Extensions.Configuration.Json
 Microsoft.Extensions.Options.ConfigurationExtensions
 Microsoft.FSharpLu.Json
+MiniGuid
 RavenDb.Client

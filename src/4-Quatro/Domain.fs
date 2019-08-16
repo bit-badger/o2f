@@ -1,48 +1,61 @@
 module Quatro.Domain
 
+open MiniGuids
 open System
 
 type CategoryId = CategoryId of string
 module CategoryId =
-  let create = Collection.idFor Collection.Page >> CategoryId
-  let ofString (stringGuid : string) = create (Guid.Parse stringGuid)
+  let ofGuid = Collection.idFor Collection.Category >> CategoryId
+  let create = MiniGuid.NewGuid >> ofGuid
+  let empty = (MiniGuid >> ofGuid) Guid.Empty
+  let ofString (stringGuid : string) = ofGuid <| MiniGuid.Parse stringGuid
   let toString x = match x with CategoryId y -> y
-  let asGuidString x = ((toString >> Collection.fromId >> snd) x).ToString "N"
+  let asGuidString x = (toString >> Collection.fromId >> snd) x |> string
 
 type CommentId = CommentId of string 
 module CommentId =
-  let create = Collection.idFor Collection.Page >> CommentId
-  let ofString (stringGuid : string) = create (Guid.Parse stringGuid)
+  let ofGuid = Collection.idFor Collection.Comment >> CommentId
+  let create = MiniGuid.NewGuid >> ofGuid
+  let empty = (MiniGuid >> ofGuid) Guid.Empty
+  let ofString (stringGuid : string) = ofGuid <| MiniGuid.Parse stringGuid
   let toString x = match x with CommentId y -> y
-  let asGuidString x = ((toString >> Collection.fromId >> snd) x).ToString "N"
+  let asGuidString x = (toString >> Collection.fromId >> snd) x |> string
 
 type PageId = PageId of string
 module PageId =
-  let create = Collection.idFor Collection.Page >> PageId
-  let ofString (stringGuid : string) = create (Guid.Parse stringGuid)
+  let ofGuid = Collection.idFor Collection.Page >> PageId
+  let create = MiniGuid.NewGuid >> ofGuid
+  let empty = (MiniGuid >> ofGuid) Guid.Empty
+  let ofString (stringGuid : string) = ofGuid <| MiniGuid.Parse stringGuid
   let toString x = match x with PageId y -> y
-  let asGuidString x = ((toString >> Collection.fromId >> snd) x).ToString "N"
+  let asGuidString x = (toString >> Collection.fromId >> snd) x |> string
 
 type PostId = PostId of string
 module PostId =
-  let create = Collection.idFor Collection.Page >> PostId
-  let ofString (stringGuid : string) = create (Guid.Parse stringGuid)
+  let ofGuid = Collection.idFor Collection.Post >> PostId
+  let create = MiniGuid.NewGuid >> ofGuid
+  let empty = (MiniGuid >> ofGuid) Guid.Empty
+  let ofString (stringGuid : string) = ofGuid <| MiniGuid.Parse stringGuid
   let toString x = match x with PostId y -> y
-  let asGuidString x = ((toString >> Collection.fromId >> snd) x).ToString "N"
+  let asGuidString x = (toString >> Collection.fromId >> snd) x |> string
 
 type UserId = UserId of string
 module UserId =
-  let create = Collection.idFor Collection.Page >> UserId
-  let ofString (stringGuid : string) = create (Guid.Parse stringGuid)
+  let ofGuid = Collection.idFor Collection.User >> UserId
+  let create = MiniGuid.NewGuid >> ofGuid
+  let empty = (MiniGuid >> ofGuid) Guid.Empty
+  let ofString (stringGuid : string) = ofGuid <| MiniGuid.Parse stringGuid
   let toString x = match x with UserId y -> y
-  let asGuidString x = ((toString >> Collection.fromId >> snd) x).ToString "N"
+  let asGuidString x = (toString >> Collection.fromId >> snd) x |> string
 
 type WebLogId = WebLogId of string
 module WebLogId =
-  let create = Collection.idFor Collection.Page >> WebLogId
-  let ofString (stringGuid : string) = create (Guid.Parse stringGuid)
+  let ofGuid = Collection.idFor Collection.WebLog >> WebLogId
+  let create = MiniGuid.NewGuid >> ofGuid
+  let empty = (MiniGuid >> ofGuid) Guid.Empty
+  let ofString (stringGuid : string) = ofGuid <| MiniGuid.Parse stringGuid
   let toString x = match x with WebLogId y -> y
-  let asGuidString x = ((toString >> Collection.fromId >> snd) x).ToString "N"
+  let asGuidString x = (toString >> Collection.fromId >> snd) x |> string
 
 type Permalink = Permalink of string
 type Tag       = Tag       of string
@@ -77,9 +90,10 @@ type Revision =
     }
 with
   static member Empty =
-    { AsOf       = Ticks 0L
-      Text       = Html ""
+    { AsOf = Ticks 0L
+      Text = Html ""
       }
+
 
 [<CLIMutable; NoComparison; NoEquality>]
 type Page =
@@ -97,8 +111,8 @@ type Page =
 with
   static member Empty = 
     { Id             = ""
-      WebLogId       = WebLogId ""
-      AuthorId       = UserId ""
+      WebLogId       = WebLogId.empty
+      AuthorId       = UserId.empty
       Title          = ""
       Permalink      = Permalink ""
       PublishedOn    = Ticks 0L
@@ -172,7 +186,7 @@ type Category =
 with
   static member Empty =
     { Id          = "new"
-      WebLogId    = WebLogId ""
+      WebLogId    = WebLogId.empty
       Name        = ""
       Slug        = ""
       Description = None
@@ -195,7 +209,7 @@ type Comment =
 with
   static member Empty =
     { Id           = ""
-      PostId       = PostId ""
+      PostId       = PostId.empty
       InReplyToId  = None
       Name         = ""
       EmailAddress = ""
@@ -223,8 +237,8 @@ type Post =
 with
   static member Empty =
     { Id          = "new"
-      WebLogId    = WebLogId ""
-      AuthorId    = UserId ""
+      WebLogId    = WebLogId.empty
+      AuthorId    = UserId.empty
       Status      = Draft
       Title       = ""
       Permalink   = Permalink ""

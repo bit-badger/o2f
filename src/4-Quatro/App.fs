@@ -8,10 +8,10 @@ open Microsoft.AspNetCore.Hosting
 module Configure =
   
   open AspNetCore.DistributedCache.RavenDB
+  open Data
   open Indexes
   open Microsoft.Extensions.Configuration
   open Microsoft.Extensions.DependencyInjection
-  open Microsoft.FSharpLu.Json
   open Raven.Client.Documents
   open Raven.Client.Documents.Indexes
   open System.Security.Cryptography.X509Certificates
@@ -35,22 +35,39 @@ module Configure =
             match cfg.["Certificate"] with
             | null -> null
             | _ -> new X509Certificate2 (cfg.["Certificate"], cfg.["Password"]))
-      st.Conventions.CustomizeJsonDeserializer <-
-        fun x ->
-            x.Converters.Add (CompactUnionJsonConverter ())
+      st.Conventions.CustomizeJsonSerializer <-
+        fun x -> Converters.all |> List.ofSeq |> List.iter x.Converters.Add
       st.Initialize ()
     IndexCreation.CreateIndexes (typeof<Categories_ByWebLogIdAndSlug>.Assembly, store)
     svc.AddSingleton(store)
       .AddDistributedRavenDBCache(fun opts -> opts.Store <- store)
-      .AddSession
-       (fun opts ->
+      .AddSession(
+        fun opts ->
             opts.Cookie.Name        <- ".Quatro.Session"
             opts.Cookie.IsEssential <- true)
+      .AddGiraffe ()
     |> ignore
+
+  let webApp : HttpHandler =
+    choose [
+      route "/"     >=> Handlers.home
+      route "/seed" >=> Handlers.seed
+      RequestErrors.NOT_FOUND "Not Found"
+      ]
 
   let app (app : IApplicationBuilder) =
     app.UseSession()
-      .UseGiraffe (htmlString "Hello World from Giraffe")
+      .UseGiraffeErrorHandler(fun ex logger ->
+        //logger.LogError(EventId(), ex, "An unhandled exception has occurred while executing the request.")
+        let error =
+          seq {
+            yield sprintf "%s - %s" (ex.GetType().Name) ex.Message
+            yield ex.StackTrace
+          }
+          |> Seq.reduce (+)
+        System.Console.WriteLine error
+        clearResponse >=> ServerErrors.INTERNAL_ERROR error)
+      .UseGiraffe webApp
 
 [<EntryPoint>]
 let main _ =

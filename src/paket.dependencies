@@ -10,6 +10,7 @@ nuget Giraffe
 nuget MarkdownSharp
 nuget Microsoft.AspNetCore.App
 nuget Microsoft.FSharpLu.Json
+nuget MiniGuid
 nuget Nancy
 nuget Nancy.Session.RavenDB
 nuget RavenDb.Client
