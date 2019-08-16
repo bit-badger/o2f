@@ -1,5 +1,6 @@
 using Dos.Data;
 using Dos.Domain;
+using MiniGuids;
 using Nancy;
 using Nancy.Session.Persistable;
 using Raven.Client.Documents;
@@ -21,7 +22,7 @@ namespace Dos.Modules
         }
         private async Task<string> Seed(IDocumentStore store)
         {
-            string newId(string collection) => $"{collection}/{Guid.NewGuid().ToString("N")}";
+            string newId(string collection) => $"{collection}/{MiniGuid.NewGuid().ToString()}";
             long now() => DateTime.Now.Ticks;
             long days(int nbr) => new TimeSpan(nbr, 0, 0, 0).Ticks;
 

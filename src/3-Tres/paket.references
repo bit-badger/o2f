@@ -2,6 +2,7 @@ FSharp.Core
 MarkdownSharp
 Microsoft.AspNetCore.Owin
 Microsoft.AspNetCore.Server.Kestrel
+MiniGuid
 Nancy
 Nancy.Session.RavenDB
 RavenDb.Client

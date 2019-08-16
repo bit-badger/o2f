@@ -16,7 +16,12 @@ In `paket.dependencies`, in the root of the solution folder, replace the followi
 
     nuget Microsoft.AspNetCore.App
 
-In addition, add `nuget AspNetCore.DistributedCache.RavenDB`. Make these same changes in `paket.references` for Uno as well.
+In addition, add the following packages:
+
+    nuget AspNetCore.DistributedCache.RavenDB
+    nuget MiniGuid
+
+Make these same changes in `paket.references` for Uno as well.
 
 We'll also need to make one small change to `Uno.csproj`*. On the second line, add `.Web` to the `Sdk` attribute on the project; the entire `Sdk` should read `Microsoft.NET.Sdk.Web`.
 

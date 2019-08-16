@@ -1,4 +1,5 @@
 AspNetCore.DistributedCache.RavenDB
 MarkdownSharp
 Microsoft.AspNetCore.App
+MiniGuid
 RavenDb.Client

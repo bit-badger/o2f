@@ -34,7 +34,7 @@
           
 <h3><a name="Dos-Step-4" class="anchor" href="#Dos-Step-4">Dos - Step 4</a></h3>
 <h4><a name="Dependencies" class="anchor" href="#Dependencies">Dependencies</a></h4>
-<p>There are fewer changes here than there were for <strong>Uno</strong>; in fact, we really only need one more package. Add <code>nuget Nancy.Session.RavenDB</code> to <code>paket.dependencies</code>, add <code>Nancy.Session.RavenDB</code> to <code>paket.references</code>, and run <code>paket install</code>.</p>
+<p>There are fewer changes here than there were for <strong>Uno</strong>; in fact, we really only need two more packages. Add <code>nuget Nancy.Session.RavenDB</code> to <code>paket.dependencies</code>, add <code>Nancy.Session.RavenDB</code> and <code>MiniGuid</code> to <code>paket.references</code>, and run <code>paket install</code>.</p>
 <h4><a name="Bootstrapper-Updates" class="anchor" href="#Bootstrapper-Updates">Bootstrapper Updates</a></h4>
 <p>The package we've added is part of the <a href="https://github.com/danieljsummers/Nancy.Session.Persistable"><code>Nancy.Session.Persistable</code> project</a>, a set of persistence providers I wrote for Nancy that allow strongly-typed access to session objects, and provide for several different stores of session data. We need to configure this in our bootstrapper, though. We also need to update our <code>DataConfig</code> class to handle the configuration of a certificate file and password, to support secure connections to RavenDB.</p>
 <p>In <code>DataConfig.cs</code>, above the definition for <code>Urls</code>:</p>

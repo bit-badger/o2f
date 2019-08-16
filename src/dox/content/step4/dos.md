@@ -2,7 +2,7 @@
 
 #### Dependencies
 
-There are fewer changes here than there were for **Uno**; in fact, we really only need one more package. Add `nuget Nancy.Session.RavenDB` to `paket.dependencies`, add `Nancy.Session.RavenDB` to `paket.references`, and run `paket install`.
+There are fewer changes here than there were for **Uno**; in fact, we really only need two more packages. Add `nuget Nancy.Session.RavenDB` to `paket.dependencies`, add `Nancy.Session.RavenDB` and `MiniGuid` to `paket.references`, and run `paket install`.
 
 #### Bootstrapper Updates
 

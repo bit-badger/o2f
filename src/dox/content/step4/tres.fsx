@@ -56,9 +56,9 @@ module Domain =
 
 #### Dependencies
 
-As with **Dos**, we need a reference to `Nancy.Session.RavenDB`; we also are going to need a package called
-`TaskBuilder.fs`. Both of these are already covered by the packages we already reference in `paket.dependencies`, so we
-just need to add both of these to `paket.references`, then run `paket install`.
+As with **Dos**, we need reference to `Nancy.Session.RavenDB` and `MiniGuid`, and we also are going to need a package
+called `TaskBuilder.fs`. All of these are covered by the packages we already reference in `paket.dependencies`, so we
+just need to add these three packages to `paket.references`, then run `paket install`.
 
 #### Boostrapper Updates
 
@@ -221,32 +221,28 @@ compact DU converter to RavenDB's configuration; this time, we'll write our own.
 
 Just below the definition of `MarkdownArticleContent`, we'll create `IArticleContentConverter`, which will extend
 `JsonConverter<IArticleContent>`. Generic converters need to implement two methods, `WriteJson` and `ReadJson`. Writing
-is the easiest; and, since we have a `ContentType` property, we don't actually need to write the underlying CLR type to
-the database. Here's the declaration, up through `WriteJson`.
+is the easiest; and, we'll use the `ContentType` property to write a very succinct JSON object in of the form
+`{ "[Html|Markdown]" : [text] }`. Here's the declaration, up through `WriteJson`.
 *)
 type IArticleContentConverter () =
   inherit JsonConverter<IArticleContent> ()
-
+  
   override __.WriteJson (w : JsonWriter, v : IArticleContent, _ : JsonSerializer) =
-    let writePair k (v : string) =
-      w.WritePropertyName k
-      w.WriteValue        v
     w.WriteStartObject ()
-    writePair "ContentType" v.ContentType
-    writePair "Text"        v.Text
+    w.WritePropertyName v.ContentType
+    w.WriteValue v.Text
     w.WriteEndObject ()
 (**
 Each `Write*` call in Json.NET writes a token; these tokens describe the shape of the JSON that will eventually be
-serialized. Since we're intercepting a single property, but writing multiple values, we need to identify it as an
-object. Then, we write two sets of property name and value tokens, and an end object token.
+serialized. Since we're intercepting a single property, but writing an object, we write the start object token. Then,
+we use `ContentType` for the property name, and `Text` for the value. We also need to write an end object token.
 
 Reading it back is a bit different:
 *)
   override __.ReadJson (r : JsonReader, _, _, _, _) =
-    let readIgnore = r.Read >> ignore
-    let typ  = (readIgnore >> r.ReadAsString) () // PropertyName -> String
-    let text = (readIgnore >> r.ReadAsString) () // PropertyName -> String
-    readIgnore () // EndObject
+    let typ  = r.ReadAsString () // PropertyName
+    let text = r.ReadAsString () // String
+    (r.Read >> ignore) () // EndObject
     let content : IArticleContent =
       match typ with
       | ContentType.Html -> upcast HtmlArticleContent ()
@@ -256,17 +252,17 @@ Reading it back is a bit different:
     content
 (**
 When `ReadJson` is called, the starting object token has already been read. We read the tokens back in the order in
-which we wrote them, so we'll see a property name token, then a value token. We know the property that we wrote, so we
-can ignore that token; then, we know the value that we wrote is a string, so we can read the next token's value as a
-string. We'll repeat that process for the actual text, and then, we need one more read to advance the reader past the
-end object token. Once we have our property values, the `ContentType` tells us what type of implementation to construct,
-and we can use the `Text` setter on the `IArticleContent` interface to put the text in the object.
+which we wrote them, so as we read through the `JsonReader`, we'll encounter our property name first, then the value
+token. _(We also need one more read to advance the reader past the end object token.)_ Once we have our property values,
+the `ContentType` tells us what type of implementation to construct, and we can use the `Text` setter on the
+`IArticleContent` interface to put the text in the object.
 
-This can seem convoluted, but hopefully the comments above help somewhat. I learned about what I've explained in this
-section when I encountered _this_ problem for _this_ project. Also, most of our other `JsonConverter`s will be simply
-transforming the value as it's written and read, not writing an entire object based on the data type of the property.
-Even this converter, though, easily fits on one screen, and thanks to F#'s function composition, it isn't repetitive;
-nearly every line does something different.
+> A bit of encouragement may be good here - I learned about what I've explained in this section when I encountered
+> _this_ problem for _this_ project, and what you see above is the second version of it. I had written simple
+> transformation `JsonConverter`s before, and the others we'll write will be like that. To me, this has been an
+> illustration that no language is immune from the occasional odd behavior; but, if we apply what we already know, and
+> do a bit of documentation diving, we'll often find an elegant solution. We might even no longer classify the behavior
+> we encountered as odd!
 
 We do need to revisit our RavenDB connection, though, as we need to actually plug our converter into the document store.
 Here's the updated definition of `_store` from `App.fs`:

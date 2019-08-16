@@ -59,19 +59,15 @@ type IArticleContentConverter () =
   inherit JsonConverter<IArticleContent> ()
 
   override __.WriteJson (w : JsonWriter, v : IArticleContent, _ : JsonSerializer) =
-    let writePair k (v : string) =
-      w.WritePropertyName k
-      w.WriteValue        v
     w.WriteStartObject ()
-    writePair "ContentType" v.ContentType
-    writePair "Text"        v.Text
+    w.WritePropertyName v.ContentType
+    w.WriteValue v.Text
     w.WriteEndObject ()
 
   override __.ReadJson (r : JsonReader, _, _, _, _) =
-    let readIgnore = r.Read >> ignore
-    let typ  = (readIgnore >> r.ReadAsString) () // PropertyName -> String
-    let text = (readIgnore >> r.ReadAsString) () // PropertyName -> String
-    readIgnore () // EndObject
+    let typ  = r.ReadAsString () // PropertyName
+    let text = r.ReadAsString () // String
+    (r.Read >> ignore) () // EndObject
     let content : IArticleContent =
       match typ with
       | ContentType.Html -> upcast HtmlArticleContent ()

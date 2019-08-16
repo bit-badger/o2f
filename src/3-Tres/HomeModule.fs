@@ -1,6 +1,7 @@
 namespace Tres
 
 open FSharp.Control.Tasks.V2.ContextInsensitive
+open MiniGuids
 open Nancy
 open Nancy.Session.Persistable
 open Raven.Client.Documents
@@ -11,7 +12,7 @@ type HomeModule (store : IDocumentStore) as this =
   inherit NancyModule ()
 
   let seed () =
-    let newId collection = sprintf "%s/%s" collection (Guid.NewGuid().ToString "N")
+    let newId collection = sprintf "%s/%s" collection ((MiniGuid.NewGuid >> string) ())
     let now () = DateTime.Now.Ticks
     let days nbr = (TimeSpan (nbr, 0, 0, 0)).Ticks
     let markdown text =
@@ -22,10 +23,10 @@ type HomeModule (store : IDocumentStore) as this =
       let h = HtmlArticleContent ()
       (h :> IArticleContent).Text <- text
       h
-
-    use sess = store.OpenAsyncSession ()
     
     task {
+      use sess = store.OpenAsyncSession ()
+
       // Web log
       let webLogId = newId Collection.WebLog
       
@@ -84,9 +85,9 @@ type HomeModule (store : IDocumentStore) as this =
           { Id             = userId
             EmailAddress   = "me@example.com"
             PasswordHash   = "####"
-            FirstName      = "Dos"
+            FirstName      = "Tres"
             LastName       = "Admin"
-            PreferredName  = "Bob"
+            PreferredName  = "Carol"
             Url            = Some "http://localhost:5000"
             Authorizations = [ { Level = AuthorizationLevel.Administrator; WebLogId = webLogId } ]
             }
@@ -196,9 +197,6 @@ type HomeModule (store : IDocumentStore) as this =
       
       return "All done!" :> obj
       }
-    |> Async.AwaitTask
-    |> Async.RunSynchronously
-    |> Threading.Tasks.Task.FromResult   
   
   do
     this.Get("/", fun _ ->

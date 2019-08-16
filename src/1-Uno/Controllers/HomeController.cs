@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MiniGuids;
 using Raven.Client.Documents;
 using System;
 using System.Diagnostics;
@@ -25,7 +26,7 @@ namespace Uno.Controllers
         [HttpGet("/seed")]
         public async Task<IActionResult> Seed()
         {
-            string newId(string collection) => $"{collection}/{Guid.NewGuid().ToString("N")}";
+            string newId(string collection) => $"{collection}/{MiniGuid.NewGuid().ToString()}";
             long now() => DateTime.Now.Ticks;
             long days(int nbr) => new TimeSpan(nbr, 0, 0, 0).Ticks;
 
