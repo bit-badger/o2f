@@ -223,22 +223,23 @@ module Data =
     /// JSON converter for Ticks
     type TicksJsonConverter () =
       inherit JsonConverter<Ticks> ()
-      override __.WriteJson(w : JsonWriter, v : Ticks, _ : JsonSerializer) =
+      override __.WriteJson (w : JsonWriter, v : Ticks, _ : JsonSerializer) =
         let (Ticks x) = v
         w.WriteValue x
-      override __.ReadJson(r: JsonReader, _, _, _, _) =
+      override __.ReadJson (r: JsonReader, _, _, _, _) =
         (string >> int64 >> Ticks) r.Value
     /// JSON converter for WebLogId
     type WebLogIdJsonConverter () =
       inherit JsonConverter<WebLogId> ()
-      override __.WriteJson(w : JsonWriter, v : WebLogId, _ : JsonSerializer) =
+      override __.WriteJson (w : JsonWriter, v : WebLogId, _ : JsonSerializer) =
         (WebLogId.toString >> w.WriteValue) v
-      override __.ReadJson(r: JsonReader, _, _, _, _) =
+      override __.ReadJson (r: JsonReader, _, _, _, _) =
         (string >> WebLogId) r.Value
 (**
 Once we get all our converters defined, we will define an `all` property on the `Converters` module. We'll also add the
 FSharpLu converter to this list, so `all` will be all the `JsonConverter`s we need for our application, and we can use
-them consistently throughout the application.
+them consistently throughout the application. _(Interestingly, the default serialization of `ArticleContent` is exactly
+what we wrote for `IArticleContent` in **Tres**, so it's the one type for which we don't need a converter here.)_
 *)
     // add
     open Microsoft.FSharpLu.Json
