@@ -1,6 +1,7 @@
 [<RequireQualifiedAccess>]
 module Cinco.Collection
 
+open MiniGuids
 open System
 
 let Category = "Categories"
@@ -10,12 +11,12 @@ let Post     = "Posts"
 let User     = "Users"
 let WebLog   = "WebLogs"
 
-let idFor coll (docId : Guid) = sprintf "%s/%s" coll (docId.ToString "N")
+let idFor coll (docId : MiniGuid) = sprintf "%s/%s" coll (string docId)
 
 let fromId docId =
   try
     let parts = (match isNull docId with true -> "" | false -> docId).Split '/'
     match parts.Length with
-    | 2 -> parts.[0], Guid.Parse parts.[1]
-    | _ -> "", Guid.Empty
-  with :?FormatException -> "", Guid.Empty
+    | 2 -> parts.[0], MiniGuid.Parse parts.[1]
+    | _ -> "", MiniGuid Guid.Empty
+  with :?FormatException -> "", MiniGuid Guid.Empty

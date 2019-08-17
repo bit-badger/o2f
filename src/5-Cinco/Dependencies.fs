@@ -46,3 +46,24 @@ type IDependencies =
 module DependencyExtraction =
   
   let getStore (deps : IDependencies) = deps.Store
+
+[<AutoOpen>]
+module Dependencies =
+  
+  open Data
+  open System.IO
+  
+  let private cfg = (File.ReadAllText >> DataConfig.fromJson) "data-config.json"
+  let private depSingle = lazy (
+    { new IDependencies with
+        member __.Store
+          with get () =
+            let store = lazy (
+              let stor = DataConfig.configureStore cfg (new DocumentStore ())
+              stor.Conventions.CustomizeJsonSerializer <-
+                fun x -> Converters.all |> List.ofSeq |> List.iter x.Converters.Add
+              stor.Initialize ()
+              )
+            store.Force()
+      })
+  let deps = depSingle.Force ()

@@ -4,4 +4,6 @@ MarkdownSharp
 Microsoft.AspNetCore.Owin
 Microsoft.AspNetCore.Server.Kestrel
 Microsoft.FSharpLu.Json
+MiniGuid
 RavenDb.Client
+TaskBuilder.fs

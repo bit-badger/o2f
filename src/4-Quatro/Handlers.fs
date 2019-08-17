@@ -103,10 +103,10 @@ let seed : HttpHandler =
               PublishedOn    = aboutNow
               UpdatedOn      = aboutNow
               ShowInPageList = true
-              Text           = Html "This blog is written in <strong>F#</strong> using Nancy"
+              Text           = Html "This blog is written in <strong>F#</strong> using Giraffe"
               Revisions      = [
                 { AsOf = aboutNow
-                  Text = Html "This blog is written in <strong>F#</strong> using Nancy"
+                  Text = Html "This blog is written in <strong>F#</strong> using Giraffe"
                   }
                 ]
               }
