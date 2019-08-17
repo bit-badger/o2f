@@ -56,7 +56,7 @@ The section of `Cinco.fsproj` that specifies the build order should look like th
 
 ### Parsing `data.config` (and More)
 
-Up to this point, we've used JSON.Net to parse `data-config.json`. There's nothing wrong with that approach, but we'll
+Up to this point, we've used Json.NET to parse `data-config.json`. There's nothing wrong with that approach, but we'll
 implement our JSON parsing a different way in this project, using a library from the same people who bring us Freya
 called [Chiron](https://xyncro.tech/chiron/) (pronounced "KY-ron"). Of course, to be able to use it, we have to pull it
 in as a dependency. Add `nuget Chiron` to `paket.dependencies`, add `Chiron` to `paket.references`, and run

@@ -51,7 +51,7 @@ type DataConfig =
     member this.Urls = [| this.Url |]
 (**
 This should be familiar at this point; we're using a record type instead of a class, and we've added an instance member
-the same way we did the static `Empty` members on our entities. JSON.Net will have no trouble deserializing to a record
+the same way we did the static `Empty` members on our entities. Json.NET will have no trouble deserializing to a record
 type instead of a class; it actually has very good support for F# data constructs. We will tweak some of them when we
 get to **Quatro**.
 

@@ -12,6 +12,6 @@ _(This step is currently in work, so there is no code checkpoint for it yet.)_
 
 **Tres** - [In Depth](tres.html)
 
-**Quatro** - In Depth
+**Quatro** - [In Depth](quatro.html)
 
 **Cinco** - In Depth

@@ -35,7 +35,7 @@ Within the `src` directory, add `nuget MarkdownSharp` to `paket.dependencies`, a
 
 Some other design decisions:
 
-- We will use strings (created from `Guid`s) as our Ids for entities, and all of documents will have `Id` as the property _(this supports the convention RavenDB uses to identify document identifiers)_.
+- We will use strings (created from `Guid`s, utilizing the `MiniGuid` package to preserve space) as our Ids for entities, and all of documents will have `Id` as the property _(this supports the convention RavenDB uses to identify document identifiers)_.
 - Authorization levels, post statuses, and comment statuses are represented as strings, but we provide a means to avoid magic strings in the code while dealing with these.
 - Properties representing date/time will be stored as `long`/`int64`, representing ticks. _(We'll use NodaTime for manipulation, but this would also support using something built-in like `DateTime.UtcNow.Ticks`.)_
 - While best practices dictate properly commenting all classes and public properties/fields, we will exclude these for brevity's sake.

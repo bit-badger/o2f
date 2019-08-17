@@ -16,6 +16,7 @@
 #r "../../../packages/Microsoft.Extensions.DependencyInjection/lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.dll"
 #r "../../../packages/Microsoft.Extensions.DependencyInjection.Abstractions/lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll"
 #r "../../../packages/Microsoft.Extensions.FileProviders.Abstractions/lib/netstandard2.0/Microsoft.Extensions.FileProviders.Abstractions.dll"
+#r "../../../packages/Microsoft.Extensions.Logging.Abstractions/lib/netstandard2.0/Microsoft.Extensions.Logging.Abstractions.dll"
 #r "../../../packages/Microsoft.FSharpLu.Json/lib/netstandard2.0/Microsoft.FSharpLu.Json.dll"
 #r "../../../packages/Newtonsoft.Json/lib/netstandard2.0/Newtonsoft.Json.dll"
 #r "../../../packages/RavenDb.Client/lib/netstandard2.0/Raven.Client.dll"
@@ -58,11 +59,12 @@ module Domain =
 #### Dependencies
 
 Our dependencies don't change that much for this project; we won't change it to reference
-`Microsoft.AspNetCore.App`, but we'll add the RavenDB distributed cache, and we'll need to reference the session package
-as well. The new references are:
+`Microsoft.AspNetCore.App`, but we'll add the RavenDB distributed cache, the `MiniGuid` package, and the ASP.NET Core
+session package. The new references are:
 
     AspNetCore.DistributedCache.RavenDB
     Microsoft.AspNetCore.Session
+    MiniGuid
 
 Then, run `paket install` to register these as as part of this project.
 
@@ -100,7 +102,7 @@ module App =
               match cfg.["Certificate"] with
               | null -> null
               | _ -> new X509Certificate2 (cfg.["Certificate"], cfg.["Password"]))
-        st.Conventions.CustomizeJsonDeserializer <-
+        st.Conventions.CustomizeJsonSerializer <-
           fun x ->
               x.Converters.Add (CompactUnionJsonConverter ())
         st.Initialize ()
@@ -140,6 +142,13 @@ executed. This is done through
 [Giraffe's routing functions](https://github.com/giraffe-fsharp/Giraffe/blob/master/DOCUMENTATION.md#routing). The
 simplest set of functions that will get us our results is:
 *)
+(*** hide ***)
+    let errorHandler (ex : exn) _ =
+      let error = sprintf "%s - %s" (ex.GetType().Name) ex.Message
+      sprintf "%s\n%s" error ex.StackTrace
+      |> System.Console.WriteLine
+      clearResponse >=> ServerErrors.INTERNAL_ERROR error
+(** *)
     let webApp : HttpHandler =
       choose [
         route "/"     >=> Handlers.home
@@ -153,10 +162,12 @@ each of them is an `HttpHandler`, we could just as easily define routers within 
 route group. This is another case where composition gives us flexibility to structure things the way that makes the
 most sense for the application.
 
-With our router defined, we can now plug it into the application pipeline. We'll also enable sessions.
+With our router defined, we can now plug it into the application pipeline. We'll also enable sessions, and tie in a
+quick-and-dirty error handler (defined in our code, but not shown here).
 *)
     let app (app : IApplicationBuilder) =
       app.UseSession()
+        .UseGiraffeErrorHandler(errorHandler)
         .UseGiraffe webApp
 (**
 
@@ -167,9 +178,8 @@ less capable of representing an invalid state, there are several changes that wi
 was defined in **Tres**. [Review it](https://github.com/bit-badger/o2f/tree/master/src/4-Quatro/Handlers.fs#L19) to see
 how we define these.
 
-If we build and run the seed at this point, we're going to see two big problems.
-
-1. Our single-case DUs are serialized as...
+If we build and run the seed at this point, then look at our documents, something jumps right out at us. Our single-case
+DUs are serialized as...
     
     [lang="json"]
     "WebLogId": {
@@ -202,7 +212,7 @@ If we build and run the seed at this point, we're going to see two big problems.
         {
             "Tag": "result"
         }
-    ],
+    ]
 
 This is better than `Case` and `Fields` pairs, but it's still not quite what we want; we want to be able to write a
 query that says `Where(fun x -> x.WebLogId = [our-id])`, not `Where(fun x -> x.WebLogId.WebLogId = [our-id])`. Plus, the
@@ -252,10 +262,9 @@ what we wrote for `IArticleContent` in **Tres**, so it's the one type for which 
         yield CompactUnionJsonConverter true
         }
 (**
-> A note about converter order: Json.NET will pick the first converter in registration order that can convert a
-> particular type it's trying to serialize or deserialize. `CompactUnionJsonConverter` converts anything that looks
-> like a DU, so it needs to be last in the registration order. While it may offend some people's sense of order to
-> have an alphabetical list, then a stray at the bottom, if we want it to work correctly, this is how it needs to be.
+> Remember our discussion from step 3 about converter order: Json.NET will pick the first converter in registration
+> order that can convert a particular type it's trying to serialize or deserialize. `CompactUnionJsonConverter` converts
+> anything that looks like a DU, so it needs to be last in the registration order.
 
 Now, we need to let RavenDB know about all these new converters. In `App.fs`, within the `services` function, we can
 remove the `open` for `Microsoft.FSharpLu.Json`, add one for `Data` (our new module). The configuration of the JSON
@@ -269,11 +278,33 @@ serializers now looks like this:
 > Using `Converters.all` to configure both RavenDB and Giraffe will ensure that, when we are looking at a JSON
 > representation of our domain items, they are consistent and as we expect them to be.
 
+Now, if we run our application, delete all the existing documents from `O2F4`, and rerun the seed, we should see
+documents that look more like this:
+
+    [lang=json]
+    "WebLogId": "WebLogs/xGBJypaCimEuLlDDFIpmXWYyQI",
+    "AuthorId": "Users/UtavDmCkZWzeZQlTAdEvyCtkRb",
+    // ...
+    "PublishedOn": 637009756452740200,
+    "UpdatedOn": 637009756452740200,
+    // ...
+    "Tags": [
+        "candidate",
+        "congress",
+        "election",
+        "president",
+        "result"
+    ]
+
+...which is exactly what we want.
 
 #### Conclusion
 
-// TODO
+This is the most code we've written so far for this step. However, the majority of it has been at the seams between F#
+and the object-oriented .NET world. And, each of these pieces are small enough for us to completely understand. On top
+of that, the result is a system where, while illegal states could still be represented, it would be a lot more work; we
+are doing our best to make sure we fall into the pit of success.
 
 ---
-[Back to Step 3](../step4)
+[Back to Step 4](../step4)
 *)

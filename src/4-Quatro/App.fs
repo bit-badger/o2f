@@ -47,6 +47,12 @@ module Configure =
             opts.Cookie.IsEssential <- true)
       .AddGiraffe ()
     |> ignore
+  
+  let errorHandler (ex : exn) _ =
+    let error = sprintf "%s - %s" (ex.GetType().Name) ex.Message
+    sprintf "%s\n%s" error ex.StackTrace
+    |> System.Console.WriteLine
+    clearResponse >=> ServerErrors.INTERNAL_ERROR error
 
   let webApp : HttpHandler =
     choose [
@@ -57,16 +63,7 @@ module Configure =
 
   let app (app : IApplicationBuilder) =
     app.UseSession()
-      .UseGiraffeErrorHandler(fun ex logger ->
-        //logger.LogError(EventId(), ex, "An unhandled exception has occurred while executing the request.")
-        let error =
-          seq {
-            yield sprintf "%s - %s" (ex.GetType().Name) ex.Message
-            yield ex.StackTrace
-          }
-          |> Seq.reduce (+)
-        System.Console.WriteLine error
-        clearResponse >=> ServerErrors.INTERNAL_ERROR error)
+      .UseGiraffeErrorHandler(errorHandler)
       .UseGiraffe webApp
 
 [<EntryPoint>]

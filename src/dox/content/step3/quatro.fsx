@@ -248,7 +248,7 @@ We won't need these for the other single-case DUs; however, there is another twe
 
 #### Single-Case DUs to JSON
 
-I mentioned on a prior page that JSON.Net has great F# support. While this is true, it can generate rather verbose
+I mentioned on a prior page that Json.NET has great F# support. While this is true, it can generate rather verbose
 output for some types, and discriminated unions are one of those. As an example, if we have a variable named `x` defined
 as a `string option` that has the value `abc123`, this will be serialized as...
 
@@ -280,8 +280,8 @@ something like...
 
 ... (or even have `x` excluded from the output).
 
-There is a package called Microsoft.FSharpLu.Json that provides a JSON.Net converter that handles these cases; and,
-since RavenDB uses JSON.Net to serialize the documents, all we have to do is tell it to use it. This will be a new
+There is a package called Microsoft.FSharpLu.Json that provides a Json.NET converter that handles these cases; and,
+since RavenDB uses Json.NET to serialize the documents, all we have to do is tell it to use it. This will be a new
 reference overall, so we'll need to add `nuget Microsoft.FSharpLu.Json` to `paket.dependencies`, and then add
 `Microsoft.FSharpLu.Json` to `paket.references` in **Quatro**. (`paket install` as usual.)
 
@@ -303,7 +303,7 @@ that have no associated types will be serialized as strings, so statuses and lev
 still using a defined set of magic strings.
 
 As we move along, we may need to write other `JsonConverter`s; if we do, we'll just need to add them to the function
-above. One important thing to remember is that JSON.Net will use the first matching converter it finds; so, if we write
+above. One important thing to remember is that Json.NET will use the first matching converter it finds; so, if we write
 a converter for a DU, the new one will need to go above the `CompactUnionJsonConverter` or that one will be used
 instead.
 

@@ -62,7 +62,7 @@
 <p>Within the <code>src</code> directory, add <code>nuget MarkdownSharp</code> to <code>paket.dependencies</code>, and add <code>MarkdownSharp</code> to the <code>paket.references</code> file for each project. This is the library we'll use to generate HTML from Markdown article content.</p>
 <p>Some other design decisions:</p>
 <ul>
-<li>We will use strings (created from <code>Guid</code>s) as our Ids for entities, and all of documents will have <code>Id</code> as the property <em>(this supports the convention RavenDB uses to identify document identifiers)</em>.</li>
+<li>We will use strings (created from <code>Guid</code>s, utilizing the <code>MiniGuid</code> package to preserve space) as our Ids for entities, and all of documents will have <code>Id</code> as the property <em>(this supports the convention RavenDB uses to identify document identifiers)</em>.</li>
 <li>Authorization levels, post statuses, and comment statuses are represented as strings, but we provide a means to avoid magic strings in the code while dealing with these.</li>
 <li>Properties representing date/time will be stored as <code>long</code>/<code>int64</code>, representing ticks. <em>(We'll use NodaTime for manipulation, but this would also support using something built-in like <code>DateTime.UtcNow.Ticks</code>.)</em></li>
 <li>While best practices dictate properly commenting all classes and public properties/fields, we will exclude these for brevity's sake.</li>

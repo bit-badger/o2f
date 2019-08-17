@@ -300,7 +300,7 @@ using one of these functions, ideally deferring this to the point where it's sto
 all the primitives out to the edges of the application.</p>
 <p>We won't need these for the other single-case DUs; however, there is another tweak we'll need to make for them.</p>
 <h4><a name="Single-Case-DUs-to-JSON" class="anchor" href="#Single-Case-DUs-to-JSON">Single-Case DUs to JSON</a></h4>
-<p>I mentioned on a prior page that JSON.Net has great F# support. While this is true, it can generate rather verbose
+<p>I mentioned on a prior page that Json.NET has great F# support. While this is true, it can generate rather verbose
 output for some types, and discriminated unions are one of those. As an example, if we have a variable named <code>x</code> defined
 as a <code>string option</code> that has the value <code>abc123</code>, this will be serialized as...</p>
 <table class="pre"><tr><td class="lines"><pre class="fssnip"><span class="l">1: </span>
@@ -341,8 +341,8 @@ something like...</p>
 }
 </code></pre></td></tr></table>
 <p>... (or even have <code>x</code> excluded from the output).</p>
-<p>There is a package called Microsoft.FSharpLu.Json that provides a JSON.Net converter that handles these cases; and,
-since RavenDB uses JSON.Net to serialize the documents, all we have to do is tell it to use it. This will be a new
+<p>There is a package called Microsoft.FSharpLu.Json that provides a Json.NET converter that handles these cases; and,
+since RavenDB uses Json.NET to serialize the documents, all we have to do is tell it to use it. This will be a new
 reference overall, so we'll need to add <code>nuget Microsoft.FSharpLu.Json</code> to <code>paket.dependencies</code>, and then add
 <code>Microsoft.FSharpLu.Json</code> to <code>paket.references</code> in <strong>Quatro</strong>. (<code>paket install</code> as usual.)</p>
 <p>Then, in <code>App.fs</code>, we'll need to open the namespace (within the <code>Configure</code> module):</p>
@@ -368,7 +368,7 @@ document (those that point to other documents; our foreign keys, in relational t
 that have no associated types will be serialized as strings, so statuses and levels will look just as though we were
 still using a defined set of magic strings.</p>
 <p>As we move along, we may need to write other <code>JsonConverter</code>s; if we do, we'll just need to add them to the function
-above. One important thing to remember is that JSON.Net will use the first matching converter it finds; so, if we write
+above. One important thing to remember is that Json.NET will use the first matching converter it finds; so, if we write
 a converter for a DU, the new one will need to go above the <code>CompactUnionJsonConverter</code> or that one will be used
 instead.</p>
 <p>Congratulations - <strong>Quatro</strong> should be ready to go! Ensure you've created an O2F4 database in RavenDB, then <code>dotnet run</code>
