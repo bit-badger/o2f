@@ -4,6 +4,7 @@ nuget AspNetCore.DistributedCache.RavenDB
 nuget Chiron
 nuget FAKE
 nuget Freya
+nuget Freya.Optics.Http.State
 nuget FSharp.Core
 nuget FSharp.Formatting
 nuget Giraffe

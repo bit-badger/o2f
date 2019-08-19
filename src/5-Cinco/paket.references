@@ -1,5 +1,6 @@
 Chiron
 Freya
+Freya.Optics.Http.State
 MarkdownSharp
 Microsoft.AspNetCore.Owin
 Microsoft.AspNetCore.Server.Kestrel
