@@ -41,11 +41,13 @@ open Raven.Client.Documents
 
 type IDependencies =
   abstract Store : IDocumentStore
+  abstract Session : ISession
 
 [<AutoOpen>]
 module DependencyExtraction =
   
   let getStore (deps : IDependencies) = deps.Store
+  let getSession (deps : IDependencies) = deps.Session
 
 [<AutoOpen>]
 module Dependencies =
@@ -65,5 +67,8 @@ module Dependencies =
               stor.Initialize ()
               )
             store.Force()
+        member this.Session
+          with get () =
+            upcast Session this.Store
       })
   let deps = depSingle.Force ()

@@ -7,15 +7,16 @@ open Freya.Optics.Http
 open Freya.Optics.Http.Cors
 open Freya.Types.Http.State
 open Raven.Client.Documents
+open Raven.Client.Documents.Session
 open System
 open System.Collections.Generic
 
 /// Required public functionality for a session
 type ISession =
   /// Try to get a value from the session, returning an option if it does not exist
-  abstract TryGet<'T> : string -> Freya<'T option>
+  abstract TryGet : string -> Freya<string option>
   /// Set a value in the session
-  abstract Set<'T> : string -> 'T -> Freya<unit>
+  abstract Set : string -> string -> Freya<unit>
   /// Eliminate the user's session
   abstract Destroy : unit -> Freya<unit>
 
@@ -25,7 +26,7 @@ type ISession =
 type SessionDocument =
   { Id         : string
     Expiration : DateTime
-    Data       : IDictionary<string, obj>
+    Data       : IDictionary<string, string>
     }
     
 
@@ -41,11 +42,26 @@ type Session (store : IDocumentStore) =
   /// Shorthand for making a session document ID
   let sessDocId = sprintf "Sessions/%s"
 
+  /// Create a response cookie with the given session ID and expiration
+  let responseCookie sessId expires =
+    SetCookie ((Pair (cookieName, Value sessId)), Attributes [ Expires expires; HttpOnly ])
+
+  /// Get the max age of a session
+  let maxAge () = DateTime.UtcNow + expiry
+  
+  /// Add a response cookie with the session ID
+  let addResponseCookie sessId =
+    freya {
+      match! Freya.Optic.get Response.Headers.setCookie_ with
+      | Some _ -> ()
+      | None -> do! Freya.Optic.set Response.Headers.setCookie_ (responseCookie sessId (maxAge ()) |> Some)
+      }
+
   /// Create a session, returning the session ID
   let createSessionId =
     freya {
       let sessId = (MiniGuid.NewGuid >> string) ()
-      // TODO: add a response cookie with this ID
+      do! addResponseCookie sessId
       return sessId
       }
 
@@ -65,61 +81,67 @@ type Session (store : IDocumentStore) =
       | None -> return! createSessionId
       }
   
+  /// Get the session document, handling expired documents
+  let getSessionDoc sessId (docSession : IDocumentSession) =
+    let sessDoc = docSession.Load<SessionDocument> (sessDocId sessId) |> (box >> Option.ofObj)
+    match sessDoc with
+    | Some doc ->
+        let d = unbox<SessionDocument> doc
+        match d.Expiration < DateTime.UtcNow with
+        | true -> 
+            docSession.Delete (sessDocId sessId)
+            docSession.SaveChanges ()
+            None
+        | false -> Some d
+    | None -> None
+
   interface ISession with
 
-    member __.TryGet<'T> name =
-      freya {
-        let! sessionId = getSessionId
-        let docSession = store.OpenSession ()
-        let dispose () = docSession.Dispose ()
-        let sessDoc = docSession.Load<SessionDocument> (sessDocId sessionId) |> (box >> Option.ofObj)
-        match sessDoc with
-        | Some doc ->
-            let d = unbox<SessionDocument> doc
-            match d.Expiration < DateTime.Now with
-            | true -> dispose (); return None
-            | false ->
-                match d.Data.ContainsKey name with
-                | true -> dispose (); return Some (d.Data.[name] :?> 'T)
-                | false -> dispose (); return None
-        | None -> dispose (); return None
-        }
+    member __.TryGet name =
+      let docSession = store.OpenSession ()
+      try
+        freya {
+          let! sessionId = getSessionId
+          return
+            match getSessionDoc sessionId docSession with
+            | Some doc -> match doc.Data.ContainsKey name with true -> Some doc.Data.[name] | false -> None
+            | None -> None
+          }
+      finally
+        docSession.Dispose ()
     
-    member __.Set<'T> name (item : 'T) =
-      freya {
-        let! sessionId = getSessionId
-        let docSession = store.OpenSession ()
-        let dispose () = docSession.Dispose ()
-        let sessDoc = docSession.Load<SessionDocument> (sessDocId sessionId) |> (box >> Option.ofObj)
-        let addDoc () =
-          { Id         = sessDocId sessionId
-            Expiration = DateTime.Now + expiry
-            Data       = [ name, item :> obj ] |> dict
-            }
-          |> docSession.Store
+    member __.Set name item =
+      let docSession = store.OpenSession ()
+      try
+        freya {
+          let! sessionId = getSessionId
+          match getSessionDoc sessionId docSession with
+          | Some doc ->
+              doc.Data.[name] <- item
+              docSession.Advanced.Patch (sessDocId sessionId, (fun x -> x.Data),       doc.Data)
+              docSession.Advanced.Patch (sessDocId sessionId, (fun x -> x.Expiration), maxAge ())
+              docSession.Advanced.IgnoreChangesFor doc
+          | None ->
+              { Id         = sessDocId sessionId
+                Expiration = maxAge ()
+                Data       = [ name, item ] |> dict
+                }
+              |> docSession.Store
           docSession.SaveChanges ()
-          dispose ()
-        match sessDoc with
-        | Some doc ->
-            let d = unbox<SessionDocument> doc
-            match d.Expiration < DateTime.Now with
-            | true -> addDoc ()
-            | false ->
-                d.Data.[name] <- item
-                docSession.Advanced.Patch (sessDocId sessionId, (fun x -> x.Data),       d.Data)
-                docSession.Advanced.Patch (sessDocId sessionId, (fun x -> x.Expiration), DateTime.Now + expiry)
-                docSession.SaveChanges ()
-                dispose ()
-        | None -> addDoc ()
-        // TODO: make sure the response header has the session cookie
-        }
+          do! addResponseCookie sessionId
+          }
+      finally
+        docSession.Dispose ()
     
     member __.Destroy () =
-      freya {
-        let! sessionId = getSessionId
-        let docSession = store.OpenSession ()
-        docSession.Delete (sessDocId sessionId)
-        docSession.SaveChanges ()
+      let docSession = store.OpenSession ()
+      try
+        freya {
+          let! sessionId = getSessionId
+          docSession.Delete (sessDocId sessionId)
+          docSession.SaveChanges ()
+          // Expire the cookie
+          do! Freya.Optic.set Response.Headers.setCookie_ (responseCookie sessionId DateTime.UnixEpoch |> Some)
+          }
+      finally
         docSession.Dispose ()
-        // TODO: expire the session cookie in the response
-      }

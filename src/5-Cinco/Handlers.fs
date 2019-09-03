@@ -1,6 +1,7 @@
 module Cinco.Handlers
 
 open Domain
+open Freya.Core
 open Freya.Machines.Http
 open Freya.Routers.Uri.Template.Builder
 open Freya.Types.Http
@@ -186,16 +187,34 @@ let private doSeed (store : IDocumentStore) =
     }
   |> Async.AwaitTask
 
+let private addOneToCount (sess : ISession) =
+  freya {
+    let! sessValue = sess.TryGet "count"
+    let count = match sessValue with Some c -> int c + 1 | None -> 1
+    do! sess.Set "count" (string count)
+    return count
+  }
+let private greetWithCount =
+  freya {
+    let! count = liftDep getSession addOneToCount |> run deps
+    return Represent.text (sprintf "You have viewed this page %i times this session" count)
+  }
 let hello =
   freyaMachine {
-    handleOk (Represent.text "Hello World from Freya")
+    let x = liftDep getSession addOneToCount |> run deps
+    handleOk greetWithCount
     }
-let seed =
-  freyaMachine {
+
+let private handleSeed () =
+  freya {
     liftDep getStore doSeed
     |> run deps
     |> Async.RunSynchronously
-    handleOk (Represent.text "All done!")
+    return Represent.text "All done!"
+  }
+let seed =
+  freyaMachine {
+    handleOk (handleSeed ())
     }
 
 let webApp =
