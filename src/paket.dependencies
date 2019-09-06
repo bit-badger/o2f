@@ -1,10 +1,12 @@
 source https://www.nuget.org/api/v2
+source C:\Users\danie\Documents\Sandbox\FreyaSessionProvider\src
 
 nuget AspNetCore.DistributedCache.RavenDB
 nuget Chiron
 nuget FAKE
 nuget Freya
 nuget Freya.Optics.Http.State
+nuget FreyaSessionProvider.RavenDB 0.8.0-b prerelease
 nuget FSharp.Core
 nuget FSharp.Formatting
 nuget Giraffe

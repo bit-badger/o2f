@@ -38,21 +38,24 @@ module Reader =
 // -- end code lifted from #er demo --
 
 open Raven.Client.Documents
+open FreyaSessionProvider.Types
 
 type IDependencies =
   abstract Store : IDocumentStore
-  abstract Session : ISession
+  abstract Session : ISessionProvider
 
 [<AutoOpen>]
 module DependencyExtraction =
   
-  let getStore (deps : IDependencies) = deps.Store
+  let getStore   (deps : IDependencies) = deps.Store
   let getSession (deps : IDependencies) = deps.Session
 
 [<AutoOpen>]
 module Dependencies =
   
   open Data
+  open FreyaSessionProvider
+  open FreyaSessionProvider.RavenDB
   open System.IO
   
   let private cfg = (File.ReadAllText >> DataConfig.fromJson) "data-config.json"
@@ -69,6 +72,7 @@ module Dependencies =
             store.Force()
         member this.Session
           with get () =
-            upcast Session this.Store
+            SessionProvider.Create { SessionProviderConfig.defaults with store = RavenDBSessionStore this.Store }
+            //upcast Session this.Store
       })
   let deps = depSingle.Force ()

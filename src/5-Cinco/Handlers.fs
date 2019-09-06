@@ -9,6 +9,7 @@ open FSharp.Control.Tasks.V2.ContextInsensitive
 open Raven.Client.Documents
 open Reader
 open System
+open FreyaSessionProvider.Types
 
 let private doSeed (store : IDocumentStore) =
   let now () = Ticks DateTime.Now.Ticks
@@ -187,11 +188,11 @@ let private doSeed (store : IDocumentStore) =
     }
   |> Async.AwaitTask
 
-let private addOneToCount (sess : ISession) =
+let private addOneToCount (sess : ISessionProvider) =
   freya {
-    let! sessValue = sess.TryGet "count"
+    let! sessValue = sess.TryGetValue "count"
     let count = match sessValue with Some c -> int c + 1 | None -> 1
-    do! sess.Set "count" (string count)
+    do! sess.SetValue "count" (string count)
     return count
   }
 let private greetWithCount =
