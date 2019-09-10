@@ -1,7 +1,6 @@
 Chiron
 Freya
 Freya.Optics.Http.State
-FreyaSessionProvider.RavenDB
 MarkdownSharp
 Microsoft.AspNetCore.Owin
 Microsoft.AspNetCore.Server.Kestrel

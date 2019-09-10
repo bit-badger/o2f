@@ -10,6 +10,7 @@ open Raven.Client.Documents
 open Reader
 open System
 open FreyaSessionProvider.Types
+open Freya.Optics.Http
 
 let private doSeed (store : IDocumentStore) =
   let now () = Ticks DateTime.Now.Ticks
@@ -188,6 +189,11 @@ let private doSeed (store : IDocumentStore) =
     }
   |> Async.AwaitTask
 
+let private serverError =
+  freya {
+    let! error = Freya.Optic.get Response.statusCode_
+    return Represent.text (sprintf "Error %d encountered" (defaultArg error 999))
+    }
 let private addOneToCount (sess : ISessionProvider) =
   freya {
     let! sessValue = sess.TryGetValue "count"
@@ -204,6 +210,7 @@ let hello =
   freyaMachine {
     let x = liftDep getSession addOneToCount |> run deps
     handleOk greetWithCount
+    handleInternalServerError serverError
     }
 
 let private handleSeed () =

@@ -39,6 +39,7 @@ module Reader =
 
 open Raven.Client.Documents
 open FreyaSessionProvider.Types
+open System.Security.Cryptography
 
 type IDependencies =
   abstract Store : IDocumentStore
@@ -56,6 +57,7 @@ module Dependencies =
   open Data
   open FreyaSessionProvider
   open FreyaSessionProvider.RavenDB
+  open System
   open System.IO
   
   let private cfg = (File.ReadAllText >> DataConfig.fromJson) "data-config.json"
@@ -72,7 +74,15 @@ module Dependencies =
             store.Force()
         member this.Session
           with get () =
-            SessionProvider.Create { SessionProviderConfig.defaults with store = RavenDBSessionStore this.Store }
+            let aes = Aes.Create()
+            let testKey = "a8VXHmTNXhfArTUCunP5bb2DKRbRicm6asutQCHFg/k="
+            let testIV = "NuEC6eKxuEREh2S2MrETSA=="
+            aes.Key <- Convert.FromBase64String testKey
+            aes.IV <- Convert.FromBase64String testIV
+            SessionProvider.Create
+              { SessionProviderConfig.defaults with
+                  store  = RavenDBSessionStore this.Store
+                  crypto = aes }
             //upcast Session this.Store
       })
   let deps = depSingle.Force ()

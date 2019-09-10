@@ -1782,11 +1782,3 @@ NUGET
       System.Reflection.Emit.Lightweight (>= 4.3) - restriction: || (&& (>= net45) (< netstandard2.0)) (&& (< net45) (>= netstandard2.0)) (>= net47)
       System.Threading.Tasks.Extensions (>= 4.4) - restriction: || (&& (>= net45) (< netstandard2.0)) (&& (< net45) (>= netstandard2.0)) (>= net47)
       System.ValueTuple (>= 4.4) - restriction: || (&& (>= net45) (< netstandard2.0)) (&& (< net45) (>= netstandard2.0)) (>= net47)
-  remote: C:\Users\danie\Documents\Sandbox\FreyaSessionProvider\src
-    FreyaSessionProvider (0.8.0-b) - restriction: >= netstandard2.0
-      Freya (>= 4.0) - restriction: >= netstandard2.0
-      Freya.Optics.Http.State (>= 4.0) - restriction: >= netstandard2.0
-      MiniGuid (>= 1.1.2) - restriction: >= netstandard2.0
-    FreyaSessionProvider.RavenDB (0.8.0-b)
-      FreyaSessionProvider (>= 0.8.0-b) - restriction: >= netstandard2.0
-      RavenDB.Client (>= 4.2.3) - restriction: >= netstandard2.0
