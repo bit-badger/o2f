@@ -176,6 +176,13 @@ NUGET
       Freya.Types.Uri (>= 4.0) - restriction: || (>= net45) (>= netstandard2.0)
       FSharp.Core (>= 4.3.4) - restriction: || (>= net45) (>= netstandard2.0)
       System.ValueTuple (>= 4.4) - restriction: >= net45
+    FreyaSessionProvider (0.8) - restriction: >= netstandard2.0
+      Freya (>= 4.0) - restriction: >= netstandard2.0
+      Freya.Optics.Http.State (>= 4.0) - restriction: >= netstandard2.0
+      MiniGuid (>= 1.1.2) - restriction: >= netstandard2.0
+    FreyaSessionProvider.RavenDB (0.8)
+      FreyaSessionProvider (>= 0.8) - restriction: >= netstandard2.0
+      RavenDB.Client (>= 4.2.3) - restriction: >= netstandard2.0
     FSharp.Compiler.Service (27.0.1)
       FSharp.Core (>= 4.5.2) - restriction: || (>= net45) (>= netstandard2.0)
       System.Collections.Immutable (>= 1.5) - restriction: || (>= net45) (>= netstandard2.0)

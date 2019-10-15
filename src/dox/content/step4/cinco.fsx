@@ -43,31 +43,34 @@ type IDependencies =
 (**
 ### Cinco - Step 4
 
-#### A Note about Sessions
-
-In each project up to this point, one of the things we've done is set up sessions. These session stores are integrated
-into the ASP.NET Core pipeline or Nancy's SDHP - but if you do a search for "Freya sessions," you'll pretty much come up
-with links to YouTube for live sessions by an artist of the same name. There is no "session provider" for Freya because
-it is based on RFCs. _(It also uses the OWIN pipeline, not the ASP.NET Core pipeline, so we can't just piggyback off
-that one.)_
-
-However, this is not the problem we may think it to be. There are several ways to maintain state in an HTML application,
-including cookies, script, and local storage. In fact, the
-[original RFC for cookies](https://tools.ietf.org/html/rfc2109) specifically calls out sessions as one of the intended
-uses for cookies. Both ASP.NET Core and Nancy's "sessions" are a two part solution, with a "session cookie" (containing
-just the identifier for the session) and a server-side repository of data tied to that identifier. We can easily
-implement our own session store, and since cookies **are** supported in Freya, we can make our session store
-Freya-aware.
-
-Going into a lot of detail about the implementation is a rabbit trail we won't take; however, if you look at
-[`Sessions.fs` in the checkpoint for this step](https://github.com/bit-badger/o2f/tree/master/src/5-Cinco/Sessions.fs),
-you can see the basic implementation. There are many ways it could be improved (hard-coded values being made
-configurable would be a big one), but it will be what we use for our project moving forward.
+> #### A Note about Sessions
+>
+> In each project up to this point, one of the things we've done is set up sessions. These session stores are integrated
+> into the ASP.NET Core pipeline or Nancy's SDHP - but when I did a search for "Freya sessions," I pretty much just came
+> up with links to YouTube for live sessions by an artist of the same name. Prior to the time of me writing this step,
+> there was no "session provider" for Freya; as the project is based on RFCs, it handles cookies, but not a persistent
+> store based off a value from that cookie. _(It also uses the OWIN pipeline instead of the ASP.NET Core pipeline, so we
+> couldn't just piggyback off that one.)_
+>
+> Before completing this step, I wrote
+> [a session provider for Freya](https://github.com/bit-badger/FreyaSessionProvider), backed by RavenDB. Mimicking how
+> [my Nancy session providers](https://github.com/danieljsummers/Nancy.Session.Persistable) work, it's written to
+> support several different persistence technologies, which I plan to write once this step is done. Diving into the
+> details of this project would be a confusing detour; however, if you want to read the code, it's linked above.
+>
+> I do want to encourage you, dear reader, to go beyond the syntax to learn the underlying concepts. I've never thought
+> of myself as a "session guy," but with this provider, I have now written the session providers used in all five of our
+> projects. What made this possible was understanding how HTTP requests are handled. Once you figure out that a session
+> is just an ID in a cookie, handling the persistence server-side begins to make sense; and, once you understand how an
+> in-memory provider works, all that's left is making each action apply to a database, a flat file, or whatever
+> persistence you like.
+>
+> Read up on the concepts, and write the naïve implementations; it's the best way to learn things deeply.
 
 #### Dependencies
 
-Since we don't need to add a session provider, we only need to add `MiniGuid` and `TaskBuilder.fs`. Add those to
-`paket.references` and run `paket install`.
+We'll add `FreyaSessionProvider.RavenDB`, `MiniGuid`, and `TaskBuilder.fs` to `paket.references` and run
+`paket install`. This will bring in the dependencies we need.
 
 #### Previously Written Code
 
@@ -76,6 +79,8 @@ we'll replace the DU modules with the `MiniGuid`-based ones in `Domain.fs`, and 
 (more on that in a bit).
 
 #### `App.fs` and Other File Changes
+
+// TODO: stopped here - WIP below, quite possibly incorrect at this point...
 
 Up to this point, we've put the majority of our code in `App.fs`. While F# solutions have many fewer files than C#
 solutions do, splitting some things out will help us in the future. First up, move the definitions of `cfg` and `deps`
@@ -110,7 +115,7 @@ order just below dependencies, and have its first line be `module Cinco.Handlers
 `WebApp` module there, then remove the `WebApp` module. At this point, if you want to get rid of the build error, change
 `WebApp.hello` to `Handlers.hello` in the definition of `freyaOwin`.
 
-// TODO: stopped here; will pick up here once the session store is done
+// TODO: continue
 
 ---
 [Back to Step 4](../step4)

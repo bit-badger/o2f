@@ -6,7 +6,7 @@ nuget Chiron
 nuget FAKE
 nuget Freya
 nuget Freya.Optics.Http.State
-// nuget FreyaSessionProvider.RavenDB 0.8.0-b prerelease
+nuget FreyaSessionProvider.RavenDB
 nuget FSharp.Core
 nuget FSharp.Formatting
 nuget Giraffe

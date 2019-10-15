@@ -19,8 +19,5 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\FreyaSessionProvider\src\FreyaSessionProvider.RavenDB\FreyaSessionProvider.RavenDB.fsproj" />
-  </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>
