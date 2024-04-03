@@ -1,3 +1,7 @@
+## NOTE _(April 2024)_
+
+This repository is complete in its current state. Nancy and Freya have reached their end of life, Giraffe is rock-solid but looking for maintainers, and even ASP.NET Core itself is more functional with its minimal APIs. If browsing this archive (or its site) helps, I am grateful. For examples using my preferred get-things-done stack (Giraffe, Giraffe View Engine, and htmx), check out [the Bit Badger open source repository](https://git.bitbadger.solutions/bit-badger/); most of those projects follow that pattern.
+
 # objects |> functions
 
 ## What
